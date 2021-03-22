@@ -9,6 +9,13 @@ from PIL import Image
 from io import BytesIO
 import time
 import plotly.graph_objects as go
+import threading
+import pymongo
+import SessionState
+import smtplib, ssl
+import threading
+import datetime
+from plotly.subplots import make_subplots
 
 # Creating a Class for Users.
 class account:
@@ -52,6 +59,15 @@ class account:
 		# Creating DataFrame from a Dictionary.
 		self.df = pd.DataFrame(self.d, index= [0,1,2,3,4,5])
 
+		self.d1 = { 'Labels' : ['NewConfirmed', 'NewDeaths', 'NewRecovered' ], 
+		 			'Values' : [ self.summary_response['Global']['NewConfirmed'],
+				 				self.summary_response['Global']['NewDeaths'],
+				 				self.summary_response['Global']['NewRecovered'] ]
+		}
+
+		# Creating DataFrame from a Dictionary.
+		self.df = pd.DataFrame(self.d, index= [0,1,2,3,4,5])
+		self.df1 = pd.DataFrame(self.d1, index = [0,1,2])
 		# Menu for Home Section.
 		self.menu2 = ['Summary', 'COVID NEWS']
 		self.option2 = st.selectbox('options', self.menu2)
@@ -59,6 +75,10 @@ class account:
 		if self.option2 == 'Summary':
 			self.pie_fig = px.pie(self.df, values= self.d['Values'] , names= self.d['Labels'], title= 'Summary of Covid - 19 Cases.') 
 			st.write(self.pie_fig)
+			st.write()
+			st.subheader('Histogram:')
+			self.histogram_fig = px.histogram(self.df1, x= self.df1['Labels'], y= self.df1['Values'])
+			st.write(self.histogram_fig)
 		elif self.option2 == 'COVID NEWS':
 
 			# Reading the apiKey from the file.
@@ -175,7 +195,7 @@ class account:
 		st.title('Visualization of Covid - 19.')
 		st.subheader('Here you can easily view all the current cases, deaths and recoveries in nicely plotted graphs and carry out your analysis.')
 		st.write()
-		self.menu1 = ['Scatter Geo Plot', 'Graph']
+		self.menu1 = ['Scatter Geo Plot', 'Graph', 'Histogram', 'Master Figure']
 		self.option1 = st.selectbox('Options', self.menu1)
 
 		# Initializing an empty list to store the name of all the countries.
@@ -194,7 +214,7 @@ class account:
 			st.subheader('Here you can see the number of cases in each country marked on the map.')
 			st.write()
 			self.selected_country = st.selectbox('Countries: ', list(self.countries.keys()))
-			self.selected_status = st.selectbox('Options', ['confirmed', 'deaths', 'recovered'])
+			
 			self.submit = st.button('submit')
 
 			if self.submit:
@@ -202,7 +222,7 @@ class account:
 				# print(self.key)
 				try:
 					# GET Status By Country name.
-					self.By_country = f"https://api.covid19api.com/country/{self.countries[self.selected_country]}/status/{self.selected_status}"
+					self.By_country = f"https://api.covid19api.com/live/country/{self.countries[self.selected_country]}"
 					self.by_country_df = pd.read_json(self.By_country)
 				except Exception as e:
 					st.error(e)
@@ -210,9 +230,10 @@ class account:
 				self.scatter_geo_fig = px.scatter_geo(self.by_country_df, lat = self.by_country_df['Lat'],
 															lon = self.by_country_df['Lon'],
 															# locations= self.by_country_df['Country'],
-															hover_name= self.by_country_df['Country'],
-															size= self.by_country_df['Cases'],
-															color= self.by_country_df['Country'])
+															hover_name= self.by_country_df['Province'],
+															size = self.by_country_df['Active'],
+															# size= self.by_country_df['Confirmed'] - self.by_country_df['Deaths'] - self.by_country_df['Recovered'],
+															color= self.by_country_df['Province'])
 				st.write(self.scatter_geo_fig)
 
 		# Graph Visualization.
@@ -225,14 +246,26 @@ class account:
 			self.compare_country = st.selectbox('Country2:', list(self.countries.keys()))
 			self.selected_status = st.selectbox('Options', ['confirmed', 'deaths', 'recovered'])
 			
+			x = datetime.datetime.now()
+			self.date = ''
+			for i in str(x):
+				if i == ' ':
+					self.date += 'T'
+				elif i == '.':
+					break
+				else:
+					self.date += i
+			self.date += 'Z'
+			print(self.date)
 			self.submit = st.button('submit')
 			self.graph_figure = go.Figure()
 			# If country1:
 			if self.submit and self.selected_country != 'None':
 				try:
 					# Url of the Api
-					self.graph_url1 = f"https://api.covid19api.com/country/{self.countries[self.selected_country]}/status/{self.selected_status}"
+					self.graph_url1 = f"https://api.covid19api.com/country/{self.selected_country}/status/{self.selected_status}?from=2020-03-01T00:00:00Z&to{self.date}"
 					self.graph_response1 = requests.get(self.graph_url1).json()
+					print(self.graph_response1)
 					# Initializing empty lists for the x and y values of the Graphs for Country1.
 					self.x1 = []
 					self.y1 = []
@@ -240,8 +273,10 @@ class account:
 					for data1 in self.graph_response1:
 						self.x1.append(data1['Date'])
 						self.y1.append(data1['Cases'])
+					self.y1 = list(map(int, self.y1))
+					print(self.y1)
 					self.graph_figure.add_trace(go.Scatter(x= self.x1,
-																y= self.y1))
+																y= self.y1, name= self.selected_country))
 				except Exception as e:
 					st.error(e)
 
@@ -259,31 +294,388 @@ class account:
 						self.x2.append(data2['Date'])
 						self.y2.append(data2['Cases'])
 					self.graph_figure.add_trace(go.Scatter(x= self.x2,
-																y= self.y2))
+																y= self.y2, name= self.compare_country))
 				except Exception as e:
 					st.error(e)
 
 			if self.submit:
 				self.graph_figure.update_layout(
-	    			title = 'Covid 19 Cases' + ' in ' + self.selected_country,
-	    			xaxis_tickformat = '%d %B (%a)<br>%Y'
+					legend_title = 'Countries',
+		    		title = 'Covid 19 Cases',
+		    		xaxis_tickformat = '%d %B (%a)<br>%Y'
 				)
 				st.write(self.graph_figure)
 
+		elif self.option1 == 'Histogram':
+			st.title("Histogram")
+			st.subheader('Here you can see the number of cases in each country depicted on the histogram.')
+			st.write()
+			# Countries Selection 
+			self.selected_country = st.selectbox('Country: ', list(self.countries.keys()))
+			
+			if self.selected_country != 'None':
+				self.url = f"https://api.covid19api.com/live/country/{self.selected_country}"
+				self.response = pd.read_json(self.url)
+				# st.write(self.response.head())
+				self.choice = st.selectbox('Options', ['Full Country', 'States'])
+				if self.choice == 'States':
+					self.figure = px.histogram(self.response,
+										x= self.response['Province'],
+										y= self.response['Active'])
+					st.write(self.figure)
+
+				elif self.choice == 'Full Country':
+					d = {
+					'Labels' : ['Confirmed', 'Deaths', 'Recovered'],
+					'Cases' : [self.response['Confirmed'].sum(), self.response['Deaths'].sum(), self.response['Recovered'].sum() ]
+					}
+					self.df = pd.DataFrame(d, index = [0,1,2])
+
+					self.figure = px.histogram(self.df,
+												x = self.df['Labels'],
+												y = self.df['Cases']
+											)
+						
+					st.write(self.figure)
+			else:
+				st.warning('Please select a Country !!')
+
+				# elif self.choice == 'By Dates':
+				# 	# st.write(self.df.groupby(['Date']).sum())
+
+				# 	self.figure = px.histogram(#self.response,
+				# 		x = self.response['Date'],
+				# 		y = self.response['Active'],
+				# 		color = self.response['Province'] )
+				# 	st.write(self.figure)
+
+		
+		elif self.option1 == 'Master Figure':
+			st.title('Master Plots')
+			st.subheader('Here You can find all the graphs grouped together at a single place.')
+			st.write()
+			self.selected_country = st.selectbox('Country: ', list(self.countries.keys()))
+			
+
+			if self.selected_country != 'None':
+				self.url = f"https://api.covid19api.com/live/country/{self.countries[self.selected_country]}"
+				self.response = pd.read_json(self.url)
+				# st.write(self.response.head())
+
+				self.choice = st.selectbox('Menu', ['Master - Scatter', 'Master - Bar', 'Master - Line'])
+
+				if self.choice == 'Master - Scatter':
+					self.figure = make_subplots(rows= 2, cols= 2)
+					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
+					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
+					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Deaths'], name = 'Deaths'),row=2, col = 1)
+					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Recovered'], name = 'Recovered'),row=2, col = 2)
+					st.write(self.figure)
+
+				elif self.choice == 'Master - Bar':
+					self.figure = make_subplots(rows= 2, cols= 2)
+					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
+					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
+					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Deaths'], name = 'Deaths'),row=2, col = 1)
+					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Recovered'], name = 'Recovered'),row=2, col = 2)
+					st.write(self.figure)
+
+				elif self.choice == 'Master - Line':
+					self.figure = px.line(self.response, x="Date", y="Active", facet_col="Province", facet_col_wrap=2,
+		              facet_row_spacing=0.02, # default is 0.07 when facet_col_wrap is used
+		              facet_col_spacing=0.08, # default is 0.03
+		              height=5000, width= 800,
+		              title= f"Covid Cases in {self.selected_country}")
+					# fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+					self.figure.update_yaxes(showticklabels=True)
+					st.write(self.figure)
+			else:
+				st.warning('Please select a Country !!')
 
 
+	def vaccination(self):
+		self.client = pymongo.MongoClient('mongodb+srv://admin:admin@password-manager.bl1uj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+		self.db = self.client['Vaccination']
+		self.pointer = self.db['registration']
+
+		st.title('Welcome to the Vaccination Center.')
+		st.subheader('Please Fill in this form inorder to register for the vaccination:')
+		st.write()
+		try:
+			# uname = st.beta_columns(2)
+			# self.u_name = uname[0].text_input('Please enter your username')
+
+			f_Name, s_Name = st.beta_columns(2)
+			self.name = f_Name.text_input('Please enter Your first name:')
+			self.surname = s_Name.text_input("PLease enter your second name:")
+
+			e, p = st.beta_columns(2)
+			self.email = e.text_input("Please enter your email:")
+			self.phone = p.text_input('Please enter your Phone Number:')
+
+			aadhar, age = st.beta_columns(2)
+			self.aadhar_number = aadhar.text_input('Please enter your Aadhar Number:')
+			self.Age = age.text_input('Please enter your age:')
+
+			try:
+				self.uploaded_file = st.file_uploader('Please upload an image of your aadhar card ( png, jpg, jpeg with Max Size - 250 Kb):', type = ['png', 'jpg', 'jpeg'])
+				if self.uploaded_file is not None:
+					st.info('Please check your uploaded Image:')
+					st.write()
+					self.uploaded_image = Image.open(self.uploaded_file)
+					st.image(self.uploaded_image)
+				# if self.uploaded_file is not None:
+				# 	self.file_details = {
+				# 					'Name' : self.uploaded_file.name,
+				# 					'type' : self.uploaded_file.type,
+				# 					'size' : self.uploaded_file.size
+
+				# 	} 
+				# 	st.write(self.file_details)
+			except Exception as e:
+				st.error(e)
 
 
-obj = account('pratik')
+			add = st.beta_columns(1)
+			self.address = add[0].text_area("Please enter your Address:")
 
-menu = ['Home', 'Visualize', 'Analysis', 'Vaccination']
-option = st.sidebar.selectbox('Menu', menu)
+			dis = st.beta_columns(1)
+			self.diseases = dis[0].text_area('Please enter all the diseases or allergies you have (Please type NA if None):')
 
-if option == 'Home':
-	obj.home()
-elif option == 'Visualize':
-	obj.visualize()
 
+			submit = st.button('submit')
+			if submit:
+				# if self.u_name == '':
+				# 	st.error('Username cannot be blank !!')
+				if self.name == '':
+					st.error('Name cannot be blank !!')
+				elif self.email == '':
+					st.error('Email field cannot be blank !!')
+				elif self.Age == '':
+					st.error('Age cannot be blank !!')
+				elif self.aadhar_number == '':
+					st.error('Aadhar Number cannot be blank !!')
+				elif self.phone == '' or len(self.phone) < 10 or len(self.phone) > 10:
+					st.error('Enter a valid Phone Number !!')
+				elif self.address == '':
+					st.error('Address cannot be blank !!')
+				elif self.diseases == '':
+					st.error("Please enter NA if you don't have any disease !!")
+				else:
+					records = self.pointer.find_one({
+						'Email' : self.email
+						})
+					if self.uploaded_file.size > 256000:
+						st.error('Please upload the image of size < 250 Kb !!')
+					elif records:
+						st.error('You have already registered you cannot register again !!')
+					else:
+						if 'png' in str(self.uploaded_file.type):
+							self.img_format = 'png'
+						elif 'jpg' in str(self.uploaded_file.type):
+							self.img_format = 'jpg'
+						elif 'jpeg' in str(self.uploaded_file.type):
+							self.img_format = 'jpeg'
+
+						self.img_in_bytes = BytesIO()
+						self.uploaded_image.save(self.img_in_bytes, format= self.img_format)
+
+						data = {
+						    'Name' : self.name + ' ' + self.surname,
+						    'Email' : self.email,
+						    'Phone' : self.phone,
+						    'Age' : self.Age,
+						    'Aadhar Number' : self.aadhar_number,
+						    'Image' : self.img_in_bytes.getvalue(),
+						    'Address' : self.address,
+						    'Diseases' : self.diseases
+						}
+
+						try:
+							self.inserted = self.pointer.insert_one(data)
+							st.success('You have successfully registered for the vaccination.')
+						except Exception as e:
+							st.error(e)
+
+						
+						# st.write(self.img_in_bytes.getvalue())
+						# self.retrieved_img = Image.open(BytesIO(self.img_in_bytes.getvalue()))
+						# st.image(self.retrieved_img)
+
+		except Exception as e:
+			st.error(e)
+
+	def analysis(self):
+		st.write()
+		st.write()
+		st.image('./work-in-progress.jpg')
+
+client = pymongo.MongoClient('mongodb+srv://admin:admin@password-manager.bl1uj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+db = client['Covid-19']
+cursor = db['Login']
+
+session_state = SessionState.get(username= ' ', show= True, login= False, dash_board= False, dash_button= False)
+
+# key = Fernet.generate_key()
+# with open('key.key', 'wb') as file:
+	# file.write(key)
+with open('key.key', 'rb') as file:
+	key = file.read()
+
+f = Fernet(key)
+
+def dashboard():
+		obj = account(session_state.username)
+		menu = ['Home', 'Visualize', 'Analysis', 'Vaccination']
+		option = st.sidebar.selectbox('Menu', menu)
+
+		if option == 'Home':
+			obj.home()
+		elif option == 'Visualize':
+			obj.visualize()
+		elif option == 'Vaccination':
+			obj.vaccination()
+		elif option == 'Analysis':
+			obj.analysis()
+
+def send_mail(mail):
+	context = ssl.create_default_context()
+	port = 465
+	email = "Covid19app2609@gmail.com"
+	with open("password.key", "r") as file:
+		password = file.read()
+	
+	message = """\
+	Subject: Registration Succesfull.
+
+	This message is to inform you that you have successfully registered with our services.
+
+	Thankyou for choosing us :)
+
+
+	Please do not reply to this mail. This a computer generated message !!"""
+	receiver = mail
+	try:
+		server = smtplib.SMTP_SSL("smtp.gmail.com", port, context = context)
+		server.ehlo()
+   		#server.starttls(context = context)
+		
+		server.login(email, password)
+		server.ehlo()
+
+		server.sendmail(email, receiver, message)
+	except Exception as e:
+		st.error(e)
+	finally:
+		server.quit()
+
+def register():
+# Page Title
+	st.title("Register")
+	st.subheader("Please enter your details:")
+
+#Creating Containers for First and last names.
+	first_name, last_name = st.beta_columns(2)
+	name = first_name.text_input("First Name:")
+	surname = last_name.text_input("Last Name:")
+
+	e = st.beta_columns(1)
+	email = e[0].text_input("Email:")
+
+	u, ph = st.beta_columns(2)
+	username = u.text_input("Username:")
+	phone = ph.text_input("Phone:")
+  
+
+	p1, p2 = st.beta_columns(2)
+	password1 = p1.text_input("Password:", type = 'password')
+	password2 = p2.text_input("Re-enter Password:", type = 'password')
+
+	space = st.beta_columns(3)
+	agree = space[0].checkbox("I agree")
+	submit = space[2].button("submit")
+
+	if submit:
+		if agree:
+			if password1 == password2:
+				exists = cursor.find_one({'username': username})
+				if exists:
+					st.error("This username already exists !!")
+				else:
+					db_insert = cursor.insert_one({
+					'name': name + ' ' + surname,
+					'username': username,
+					'password': f.encrypt(password1.encode()),
+					'email': email,
+					'phone': int(phone),
+					})
+
+					if db_insert:
+						try:
+							send_mail(email)
+						except Exception as e:
+							st.error(e)
+
+						st.success("Succesfully Registered.")
+					else:
+						st.error('Something went wrong !!')
+
+			else:
+				st.error("The two passwords did not match !!")
+		else:
+			st.warning("Please select the 'agree' checkbox !!")
+
+def login():
+	st.title("Login")
+	st.subheader("Please enter your details:")
+
+	u_name = st.beta_columns(2)
+	username = u_name[0].text_input("Username:")
+
+	pass_ = st.beta_columns(2)
+	password = pass_[0].text_input("Password:",type = 'password')
+
+	submit = st.beta_columns(2)
+	choice = submit[0].button("Login")
+	
+	if choice:
+		db_user = cursor.find_one({'username': username})
+		if db_user == None:
+			st.error('This user does not exists. Please register first !!')
+		else:
+			if f.decrypt(db_user['password']).decode() != password:
+				st.error("Please enter the correct password !!")
+			else:
+				st.success("Logged in successfully.")
+				session_state.username = username
+				st.info(f'Your Dashboard is ready {session_state.username},')
+				session_state.dash_button = True
+				session_state.show = False
+
+
+# st.title('Welcome to our Covid-19 Tracker App.')
+PAGE_CONFIG = {'page_title' : 'Covid-19', 'layout' : 'centered'}
+st.set_page_config(**PAGE_CONFIG)
+st.write()
+menu = ['Login', 'Register']
+
+if session_state.show:
+	choice = st.selectbox('Menu', menu)
+	if choice == 'Login':
+		login()
+	elif choice == 'Register':
+		register()
+
+if session_state.login:
+	# thread = threading.Thread(target= 'dashboard', args= None)
+	# thread.start()
+	# print(f'Number of Active Connections: {threading.activeCount()}')
+	dashboard()
+
+if session_state.dash_button:
+	session_state.login = True
+	st.button('Go to My Dashborad ->')
+	session_state.dash_button = False
 
 
 
