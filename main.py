@@ -16,6 +16,10 @@ import smtplib, ssl
 import threading
 import datetime
 from plotly.subplots import make_subplots
+from streamlit.report_thread import add_report_ctx
+import random
+import base64
+
 
 # Creating a Class for Users.
 class account:
@@ -47,7 +51,7 @@ class account:
 
 		# Creating a Dictionary to convert it into a Dataframe to visualize it using plotly pie chart.
 		# self.index = ['NewConfirmed','TotalConfirmed', 'NewDeaths', 'TotalDeaths', 'NewRecovered', 'TotalRecovered' ]
-		self.d = { 'Labels' : ['NewConfirmed','TotalConfirmed', 'NewDeaths', 'TotalDeaths', 'NewRecovered', 'TotalRecovered' ], 
+		self.d = { 'Labels' : ['New Confirmed','Total Confirmed', 'New Deaths', 'Total Deaths', 'New Recovered', 'Total Recovered' ], 
 		 			'Values' : [ self.summary_response['Global']['NewConfirmed'],
 		 						self.summary_response['Global']['TotalConfirmed'],
 				 				self.summary_response['Global']['NewDeaths'],
@@ -59,7 +63,7 @@ class account:
 		# Creating DataFrame from a Dictionary.
 		self.df = pd.DataFrame(self.d, index= [0,1,2,3,4,5])
 
-		self.d1 = { 'Labels' : ['NewConfirmed', 'NewDeaths', 'NewRecovered' ], 
+		self.d1 = { 'Labels' : ['New Confirmed', 'New Deaths', 'New Recovered' ], 
 		 			'Values' : [ self.summary_response['Global']['NewConfirmed'],
 				 				self.summary_response['Global']['NewDeaths'],
 				 				self.summary_response['Global']['NewRecovered'] ]
@@ -510,6 +514,16 @@ class account:
 		st.write()
 		st.image('./work-in-progress.jpg')
 
+	def help_center(self):
+		st.title('Help Centre.')
+		st.write()
+		st.write("Here's a small gif which displays 7 steps to avoid Coronavirus.")
+		gif_runner = st.image('./COVID_WHO.gif')
+		st.write()
+		st.subheader('More Prevention Measures and helpline number can be found Here:')
+		st.write('WHO : ','https://www.who.int/health-topics/coronavirus#tab=tab_2')
+		st.write('Indian Helpline Numbers : ','https://www.mohfw.gov.in/pdf/coronvavirushelplinenumber.pdf')
+
 client = pymongo.MongoClient('mongodb+srv://admin:admin@password-manager.bl1uj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
 db = client['Covid-19']
 cursor = db['Login']
@@ -524,19 +538,64 @@ with open('key.key', 'rb') as file:
 
 f = Fernet(key)
 
+
 def dashboard():
 		obj = account(session_state.username)
-		menu = ['Home', 'Visualize', 'Analysis', 'Vaccination']
-		option = st.sidebar.selectbox('Menu', menu)
+		main_menu = ['Home', 'Visualize', 'Analysis', 'Vaccination', 'Help Center']
+		main_option = st.sidebar.selectbox('Menu', main_menu)
+		st.sidebar.write()
+		Quotes = {
+			'Mohamed El-Erian' : '“Hopefully, as companies give more attention to the importance of work-life balance, more and more people will be in a better position to decide and act more holistically on what’s important to them.” ',
+			'Cali Williams Yost' : '“Telecommuting, one of many forms of work-life flexibility, should no longer be viewed as a nice-to-have, optional perk mostly used by working moms. These common stereotypes don’t match reality — allowing employees to work remotely is a core business strategy today… We need to de-parent, de-gender, and de-age the perception of the flexible worker.”',
+			'Michael Dell' : '“Technology now allows people to connect anytime, anywhere, to anyone in the world, from almost any device. This is dramatically changing the way people work, facilitating 24/7 collaboration with colleagues who are dispersed across time zones, countries, and continents.”',
+			'Socrates' : '"The secret of change is to focus all of your energy, not on fighting the old, but on building the new.”',
+			'Kiran Mazumdar-Shaw' : '"Ultimately, the greatest lesson that COVID-19 can teach humanity is that we are all in this together."',
+			'Steve Maraboli' : '“Life doesn’t get easier or more forgiving, we get stronger and more resilient.”',
+			'Greg Kincaid' : '“No matter how much falls on us, we keep plowing ahead. That’s the only way to keep the roads clear.”',
+			'Michelle Obama' : '"Women are working more, men are understanding their value as caregivers, women are primary breadwinners—I mean, we could go on and on and on. Things are different. So we can’t keep operating like everything is the same, and that’s what many of us have done. And I think it’s up to us to change the conversation."',
+			'Arjun Agarwal' : '"Now is the time for us to look after the people who work for us. When a company steps up at a time like this, it builds loyalty, commitment, and long-lasting teams."',
+			'Caryn Sullivan' : '“In the face of adversity, we have a choice. We can be bitter, or we can be better. Those words are my North Star.”',
+		}
+		st.sidebar.write('Quotes:')
+		authors = ['Mohamed El-Erian', 'Cali Williams Yost', 'Michael Dell', 'Socrates', 'Kiran Mazumdar-Shaw', 'Steve Maraboli' ]
+		author = random.choice(authors)
+		st.sidebar.write('Author : ', author)
+		st.sidebar.write('Quote : ', Quotes[author])
+		st.sidebar.image('./covid.png')
 
-		if option == 'Home':
+		if main_option == 'Home':
 			obj.home()
-		elif option == 'Visualize':
+		elif main_option == 'Visualize':
 			obj.visualize()
-		elif option == 'Vaccination':
+		elif main_option == 'Vaccination':
 			obj.vaccination()
-		elif option == 'Analysis':
+		elif main_option == 'Analysis':
 			obj.analysis()
+		elif main_option == 'Help Center':
+			obj.help_center()
+
+
+@st.cache(allow_output_mutation=True)
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as file:
+        data = file.read()
+    return base64.b64encode(data).decode()
+
+def set_png_as_page_bg(png_file):
+    bin_str = get_base64_of_bin_file(png_file)
+    page_bg_img = '''
+    <style>
+    body {
+    background-image: url("data:image/png;base64,%s");
+    background-size: cover;
+    }
+    </style>
+    ''' % bin_str
+    
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+    return
+
+
 
 def send_mail(mail):
 	context = ssl.create_default_context()
@@ -546,14 +605,40 @@ def send_mail(mail):
 		password = file.read()
 	
 	message = """\
-	Subject: Registration Succesfull.
+Subject: Registration Succesfull.
 
-	This message is to inform you that you have successfully registered with our services.
+This message is to inform you that you have successfully registered with our services.
 
-	Thankyou for choosing us :)
+Thankyou for choosing us :)
+
+On our Platform you can explore everything that you need from news to charts to plots to future predictions all at the same place.
+
+You can even register for the vaccine, so don't forget to visit the vaccination center.
+
+Here is the webiste again in case you missed it:
+https://covid--19-dashboard.herokuapp.com/
 
 
-	Please do not reply to this mail. This a computer generated message !!"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Please do not reply to this mail. This a computer generated message !!"""
 	receiver = mail
 	try:
 		server = smtplib.SMTP_SSL("smtp.gmail.com", port, context = context)
@@ -647,6 +732,7 @@ def login():
 				st.error("Please enter the correct password !!")
 			else:
 				st.success("Logged in successfully.")
+				obj = account(session_state.username)
 				session_state.username = username
 				st.info(f'Your Dashboard is ready {session_state.username},')
 				session_state.dash_button = True
@@ -656,10 +742,23 @@ def login():
 # st.title('Welcome to our Covid-19 Tracker App.')
 PAGE_CONFIG = {'page_title' : 'Covid-19', 'layout' : 'centered'}
 st.set_page_config(**PAGE_CONFIG)
+
 st.write()
 menu = ['Login', 'Register']
 
 if session_state.show:
+	# page_bg_img = '''
+	# 	<style>
+	# 	body {
+	# 	background-image: url("https://images.pexels.com/photos/3993212/pexels-photo-3993212.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940");
+	# 	background-repeat: no-repeat;
+	# 	background-size: cover;
+	# 	}
+	# </style>'''
+	# st.markdown(page_bg_img, unsafe_allow_html=True)
+	set_png_as_page_bg('covid.png')
+	st.title('Covid - 19 WebApp.')
+	st.subheader('Welcome to our WebApp, Please login if you are an existing user or register yourself with our services.')
 	choice = st.selectbox('Menu', menu)
 	if choice == 'Login':
 		login()
