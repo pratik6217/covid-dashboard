@@ -217,28 +217,68 @@ class account:
 			st.title("Scatter Geo Plot")
 			st.subheader('Here you can see the number of cases in each country marked on the map.')
 			st.write()
-			self.selected_country = st.selectbox('Countries: ', list(self.countries.keys()))
-			
-			self.submit = st.button('submit')
+			self.choice = st.selectbox('Options', ['World-Wide', 'Countries'])
 
-			if self.submit:
-				# self.df = pd.DataFrame({})
-				# print(self.key)
-				try:
-					# GET Status By Country name.
-					self.By_country = f"https://api.covid19api.com/live/country/{self.countries[self.selected_country]}"
-					self.by_country_df = pd.read_json(self.By_country)
-				except Exception as e:
-					st.error(e)
-					# print(self.by_country_df)
-				self.scatter_geo_fig = px.scatter_geo(self.by_country_df, lat = self.by_country_df['Lat'],
-															lon = self.by_country_df['Lon'],
-															# locations= self.by_country_df['Country'],
-															hover_name= self.by_country_df['Province'],
-															size = self.by_country_df['Active'],
-															# size= self.by_country_df['Confirmed'] - self.by_country_df['Deaths'] - self.by_country_df['Recovered'],
-															color= self.by_country_df['Province'])
-				st.write(self.scatter_geo_fig)
+			if self.choice == 'Countries':
+				self.selected_country = st.selectbox('Countries: ', list(self.countries.keys()))
+				
+				self.submit = st.button('submit')
+
+				if self.submit:
+					# self.df = pd.DataFrame({})
+					# print(self.key)
+					try:
+						# GET Status By Country name.
+						self.By_country = f"https://api.covid19api.com/live/country/{self.countries[self.selected_country]}"
+						self.by_country_df = pd.read_json(self.By_country)
+					except Exception as e:
+						st.error(e)
+						# print(self.by_country_df)
+					self.scatter_geo_fig = px.scatter_geo(self.by_country_df, lat = self.by_country_df['Lat'],
+																lon = self.by_country_df['Lon'],
+																# locations= self.by_country_df['Country'],
+																hover_name= self.by_country_df['Province'],
+																size = self.by_country_df['Active'],
+																# size= self.by_country_df['Confirmed'] - self.by_country_df['Deaths'] - self.by_country_df['Recovered'],
+																color= self.by_country_df['Province'])
+					st.write(self.scatter_geo_fig)
+
+					
+			elif self.choice == 'World-Wide':
+				lat1 = []
+				lon1 = []
+				daily_status = []
+				overall_status = []
+				active = []
+				pop = []
+				countries = []
+				self.url1 = 'https://corona.lmao.ninja/v2/countries'
+				self.response1 = requests.get(self.url1).json()
+				for country in self.response1:
+					countries.append(country['country'])
+					lat1.append(country['countryInfo']['lat'])
+					lon1.append(country['countryInfo']['long'])
+					daily_status.append( f"Today Cases: {country['todayCases']}, Today Deaths: {country['todayDeaths']}, Today Recovered: {country['todayRecovered']}")
+					overall_status.append(f"Cases: {country['cases']}, Deaths: {country['deaths']}, Recovered: {country['recovered']}")
+					active.append(country['active'])
+					pop.append(country['population'])
+
+				self.df1 = pd.DataFrame({'Country' : countries,
+									'Latitude' : lat1,
+									'Longitude' : lon1,
+									'Daily_Status' : daily_status,
+									'Overall_Status' : overall_status,
+									'Active' : active,
+									'Population' : pop})
+
+				self.figure = px.scatter_geo(self.df1,
+										lat = 'Latitude',
+										lon = 'Longitude',
+										size = 'Active',
+										hover_name = self.df1['Country'],
+										color = 'Country' )
+
+				st.write(self.figure)
 
 		# Graph Visualization.
 		elif self.option1 == 'Graph':
@@ -517,12 +557,188 @@ class account:
 	def help_center(self):
 		st.title('Help Centre.')
 		st.write()
-		st.write("Here's a small gif which displays 7 steps to avoid Coronavirus.")
-		gif_runner = st.image('./COVID_WHO.gif')
-		st.write()
-		st.subheader('More Prevention Measures and helpline number can be found Here:')
-		st.write('WHO : ','https://www.who.int/health-topics/coronavirus#tab=tab_2')
-		st.write('Indian Helpline Numbers : ','https://www.mohfw.gov.in/pdf/coronvavirushelplinenumber.pdf')
+		self.choice = st.selectbox('Menu', ['General GuideLines', 'Notifications and Helplines'])
+		if self.choice == 'General GuideLines':
+			st.write("Here's a small gif which displays 7 steps to avoid Coronavirus.")
+			gif_runner = st.image('./COVID_WHO.gif')
+			st.write()
+			st.subheader('More Prevention Measures and helpline number can be found Here:')
+			st.write('WHO : ','https://www.who.int/health-topics/coronavirus#tab=tab_2')
+			st.write('Indian Helpline Numbers : ','https://www.mohfw.gov.in/pdf/coronvavirushelplinenumber.pdf')
+
+		elif self.choice == 'Notifications and Helplines':
+			self.notifications_url = ' https://api.rootnet.in/covid19-in/notifications'
+			self.helpline_url = 'https://api.rootnet.in/covid19-in/contacts'
+
+			self.notifications_response = requests.get(self.notifications_url).json()
+			self.helpline_response = requests.get(self.helpline_url).json()
+
+			self.title = []
+			self.links = {}
+			self.helplines = {}
+			self.states = []
+
+			for data in self.helpline_response['data']['contacts']['regional']:
+				self.states.append(data['loc'])
+				self.helplines[data['loc']] = data['number']
+
+			for data in self.notifications_response['data']['notifications']:
+				self.title.append(data['title'])
+				self.links[data['title']] = data['link']
+
+			st.title('Welcome to the Notifications & Helpline center.')
+			st.subheader('Here you can find all the released notifications for Covid so far.')
+			st.write(' ')
+			st.write(f"Number: {self.helpline_response['data']['contacts']['primary']['number']}")
+			st.write(f"Number-Toll-Free: {self.helpline_response['data']['contacts']['primary']['number-tollfree']}")
+			st.write(f"Email: {self.helpline_response['data']['contacts']['primary']['email']}")
+			st.write(f"Twitter: {self.helpline_response['data']['contacts']['primary']['twitter']}")
+			st.write(f"Facebook: {self.helpline_response['data']['contacts']['primary']['facebook']}")
+
+
+			self.selected_notification = st.selectbox('Notifications:', self.title)
+			st.write(self.links[self.selected_notification])
+			st.write(' ')
+			self.selected_state = st.selectbox('States:', self.states)
+			st.write(self.helplines[self.selected_state])
+
+	def raw(self):
+		st.title('Data Center')
+		st.write(' ')
+		self.option = st.selectbox('Menu', ['Statewise History of India', 'Testing Data', 'Compare Data' ])
+		if self.option == 'Statewise History of India':
+			self.url = 'https://api.rootnet.in/covid19-in/unofficial/covid19india.org/statewise/history'
+			self.d = st.date_input('Enter a date:')
+			states = []
+			
+			self.response = requests.get(self.url).json()
+			for state in self.response['data']['history'][0]['statewise']:
+				states.append(state['state'])
+
+			self.selected_state = st.selectbox('States:', states)
+
+			details = {}
+			for data in self.response['data']['history']:
+				details[data['day']] = {'states' : data['statewise'],'Total_data': [data['total']['confirmed'], data['total']['recovered'], data['total']['deaths'], data['total']['active']]}
+			# print(d)
+			self.d = str(self.d)
+			if self.d in details:
+				st.write(f'Day: {self.d}')
+				st.write(f' ⚫ Confirmed: {details[self.d]["Total_data"][0]}')
+				st.write(f' ⚫ Recovered: {details[self.d]["Total_data"][1]}')
+				st.write(f' ⚫ Deaths: {details[self.d]["Total_data"][2]}')
+				st.write(f' ⚫ Active Number of cases: {details[self.d]["Total_data"][3]}')
+				st.write(' ')
+				st.write(' ') 
+				st.write(f'State: {self.selected_state}')
+				for data in details[self.d]['states']:
+					if data['state'] == self.selected_state:
+						st.write(f" ⚫ Confirmed: {data['confirmed']}")
+						st.write(f" ⚫ Recovered: {data['recovered']}")
+						st.write(f" ⚫ Deaths: {data['deaths']}")
+						st.write(f" ⚫ Active Number of cases: {data['active']}")
+						break				
+
+			else:
+				st.info('Sorry, No data found for this day !!')
+
+		elif self.option == 'Testing Data':
+			self.url = 'https://api.rootnet.in/covid19-in/stats/testing/raw'
+			self.response = requests.get(self.url).json()
+
+			self.tests = {}
+
+			for data in self.response['data']:
+				self.date = data['timestamp'].split('T')[0]
+				self.tests[self.date] = {"totalSamplesTested": data['totalSamplesTested'],
+		      					"totalIndividualsTested": data['totalIndividualsTested'],
+		      					"totalPositiveCases": data["totalPositiveCases"],
+		      					"source": data['source']
+		      					}
+
+			self.d = st.date_input('Date:')
+			self.d = str(self.d)
+			try:
+				st.write(f"Date: {self.d}")
+				st.write(f"Total Samples Tested: {self.tests[self.d]['totalSamplesTested']}")
+				st.write(f"Total Individuals Tested: {self.tests[self.d]['totalIndividualsTested']}")
+				st.write(f"Total Positive Cases: {self.tests[self.d]['totalPositiveCases']}")
+				st.write(f"Source: {self.tests[self.d]['source']}")
+			except Exception as e:
+				st.info('No Data Found For this Day !!')
+
+		elif self.option == 'Compare Data':
+			self.country_url = 'https://corona.lmao.ninja/v2/countries'
+			self.rp = requests.get(self.country_url).json()
+			self.countries = []
+			for country in self.rp:
+				self.countries.append(country['country'])
+
+			self.selected_country = st.selectbox("Choose a Country:", self.countries)
+			self.selected_country1 = st.selectbox("Choose Another Country:", self.countries)
+			self.flag1 = False
+			self.flag2 = False
+
+			self.url = f'https://corona.lmao.ninja/v2/countries/{self.selected_country}'
+			self.url1 = f'https://corona.lmao.ninja/v2/countries/{self.selected_country1}'
+
+			self.submit = st.button('submit')
+			if self.submit:
+				if self.selected_country:
+					self.flag1 = True
+				if self.selected_country1:
+					self.flag2 = True
+
+				self.name = st.beta_columns(2)
+				self.img = st.beta_columns(2)
+				# img[0].image(Image.open(BytesIO(requests.get(response['countryInfo']['flag']).content)))
+				# img[1].image(Image.open(BytesIO(requests.get(response1['countryInfo']['flag']).content)))
+				self.c = st.beta_columns(2)
+				self.d = st.beta_columns(2)
+				self.r = st.beta_columns(2)
+				self.c1 = st.beta_columns(2)
+				self.d1 = st.beta_columns(2)
+				self.r1 = st.beta_columns(2)
+				self.act = st.beta_columns(2)
+				self.cs = st.beta_columns(2)
+				self.test = st.beta_columns(2)
+				self.pop = st.beta_columns(2)
+				self.cont = st.beta_columns(2)
+
+				if self.flag1:
+					self.response = requests.get(self.url).json()
+					self.name[0].write(f'Country : {self.response["country"]}')
+					self.img[0].image(self.response['countryInfo']['flag'])
+					self.c[0].write(f'Cases Today : {self.response["todayCases"]}')
+					self.d[0].write(f'Deaths Today: {self.response["todayDeaths"]}')
+					self.r[0].write(f'Recovered Today: {self.response["todayRecovered"]}')
+					self.c1[0].write(f'Total Cases : {self.response["cases"]}')
+					self.d1[0].write(f'Total Deaths : {self.response["deaths"]}')
+					self.r1[0].write(f'Total Recovered : {self.response["recovered"]}')
+					self.act[0].write(f'Active Number of Cases : {self.response["active"]}')
+					self.cs[0].write(f'Critical Cases : {self.response["critical"]}')
+					self.test[0].write(f'Number of Tests Done : {self.response["tests"]}')
+					self.pop[0].write(f'Population of the Country : {self.response["population"]}')
+					self.cont[0].write(f'Continent : {self.response["continent"]}')
+
+				if self.flag2:
+					self.response1 = requests.get(self.url1).json()
+					self.name[1].write(f'Country : {self.response1["country"]}')
+					self.img[1].image(self.response1['countryInfo']['flag'])
+					self.c[1].write(f'Cases Today: {self.response1["todayCases"]}')
+					self.d[1].write(f'Deaths Today: {self.response1["todayDeaths"]}')
+					self.r[1].write(f'Recovered Today: {self.response1["todayRecovered"]}')
+					self.c1[1].write(f'Total Cases : {self.response1["cases"]}')
+					self.d1[1].write(f'Total Deaths : {self.response1["deaths"]}')
+					self.r1[1].write(f'Total Recovered : {self.response1["recovered"]}')
+					self.act[1].write(f'Active Number of Cases : {self.response1["active"]}')
+					self.cs[1].write(f'Critical Cases : {self.response1["critical"]}')
+					self.test[1].write(f'Number of Tests Done : {self.response1["tests"]}')
+					self.pop[1].write(f'Population of the Country : {self.response1["population"]}')
+					self.cont[1].write(f'Continent : {self.response1["continent"]}')
+
+
+
 
 client = pymongo.MongoClient('mongodb+srv://admin:admin@password-manager.bl1uj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
 db = client['Covid-19']
@@ -541,7 +757,7 @@ f = Fernet(key)
 
 def dashboard():
 		obj = account(session_state.username)
-		main_menu = ['Home', 'Visualize', 'Analysis', 'Vaccination', 'Help Center']
+		main_menu = ['Home', 'Raw Data', 'Visualize', 'Analysis', 'Vaccination', 'Help Center']
 		main_option = st.sidebar.selectbox('Menu', main_menu)
 		st.sidebar.write()
 		Quotes = {
@@ -573,6 +789,8 @@ def dashboard():
 			obj.analysis()
 		elif main_option == 'Help Center':
 			obj.help_center()
+		elif main_option == 'Raw Data':
+			obj.raw()
 
 
 @st.cache(allow_output_mutation=True)
