@@ -39,55 +39,63 @@ class account:
          'They said it\'s not a severe disease but the number of people that needs hospital care is growing as fast as the new cases.'+
          'Some governments are taking measures to prevent a sanitary collapse to be able to take care of all these people.'+
          'I\'m tackling this challenge here. Let\'s see how some countries/regions are doing!')
-
-		st.write()
-		self.summary_url = "https://api.covid19api.com/summary"
-		self.summary_response = requests.get(self.summary_url).json()
-		
-		self.s_new_confirmed = self.summary_response['Global']['NewConfirmed']
-		self.s_total_confirmed = self.summary_response['Global']['TotalConfirmed']
-		
-		self.s_new_deaths = self.summary_response['Global']['NewDeaths']
-		self.s_total_deaths = self.summary_response['Global']['TotalDeaths']
-
-		self.s_new_recovered = self.summary_response['Global']['NewRecovered']
-		self.s_total_recovered = self.summary_response['Global']['TotalRecovered']
-
-
-		# Creating a Dictionary to convert it into a Dataframe to visualize it using plotly pie chart.
-		# self.index = ['NewConfirmed','TotalConfirmed', 'NewDeaths', 'TotalDeaths', 'NewRecovered', 'TotalRecovered' ]
-		self.d = { 'Labels' : ['New Confirmed','Total Confirmed', 'New Deaths', 'Total Deaths', 'New Recovered', 'Total Recovered' ], 
-		 			'Values' : [ self.summary_response['Global']['NewConfirmed'],
-		 						self.summary_response['Global']['TotalConfirmed'],
-				 				self.summary_response['Global']['NewDeaths'],
-				 				self.summary_response['Global']['TotalDeaths'],
-				 				self.summary_response['Global']['NewRecovered'],
-				 				self.summary_response['Global']['TotalRecovered'] ]
-		}
-
-		# Creating DataFrame from a Dictionary.
-		self.df = pd.DataFrame(self.d, index= [0,1,2,3,4,5])
-
-		self.d1 = { 'Labels' : ['New Confirmed', 'New Deaths', 'New Recovered' ], 
-		 			'Values' : [ self.summary_response['Global']['NewConfirmed'],
-				 				self.summary_response['Global']['NewDeaths'],
-				 				self.summary_response['Global']['NewRecovered'] ]
-		}
-
-		# Creating DataFrame from a Dictionary.
-		self.df = pd.DataFrame(self.d, index= [0,1,2,3,4,5])
-		self.df1 = pd.DataFrame(self.d1, index = [0,1,2])
-		# Menu for Home Section.
-		self.menu2 = ['Summary', 'COVID NEWS']
-		self.option2 = st.selectbox('options', self.menu2)
-
-		if self.option2 == 'Summary':
-			self.pie_fig = px.pie(self.df, values= self.d['Values'] , names= self.d['Labels'], title= 'Summary of Covid - 19 Cases.') 
-			st.write(self.pie_fig)
+		try:
 			st.write()
-			st.subheader('Histogram:')
-			self.histogram_fig = px.histogram(self.df1, x= self.df1['Labels'], y= self.df1['Values'])
-			st.write(self.histogram_fig)
+			self.summary_url = "https://api.covid19api.com/summary"
+			self.summary_response = requests.get(self.summary_url).json()
+			
+			self.s_new_confirmed = self.summary_response['Global']['NewConfirmed']
+			self.s_total_confirmed = self.summary_response['Global']['TotalConfirmed']
+			
+			self.s_new_deaths = self.summary_response['Global']['NewDeaths']
+			self.s_total_deaths = self.summary_response['Global']['TotalDeaths']
+
+			self.s_new_recovered = self.summary_response['Global']['NewRecovered']
+			self.s_total_recovered = self.summary_response['Global']['TotalRecovered']
+
+
+			# Creating a Dictionary to convert it into a Dataframe to visualize it using plotly pie chart.
+			# self.index = ['NewConfirmed','TotalConfirmed', 'NewDeaths', 'TotalDeaths', 'NewRecovered', 'TotalRecovered' ]
+			self.d = { 'Labels' : ['New Confirmed','Total Confirmed', 'New Deaths', 'Total Deaths', 'New Recovered', 'Total Recovered' ], 
+			 			'Values' : [ self.summary_response['Global']['NewConfirmed'],
+			 						self.summary_response['Global']['TotalConfirmed'],
+					 				self.summary_response['Global']['NewDeaths'],
+					 				self.summary_response['Global']['TotalDeaths'],
+					 				self.summary_response['Global']['NewRecovered'],
+					 				self.summary_response['Global']['TotalRecovered'] ]
+			}
+
+			# Creating DataFrame from a Dictionary.
+			self.df = pd.DataFrame(self.d, index= [0,1,2,3,4,5])
+
+			self.d1 = { 'Labels' : ['New Confirmed', 'New Deaths', 'New Recovered' ], 
+			 			'Values' : [ self.summary_response['Global']['NewConfirmed'],
+					 				self.summary_response['Global']['NewDeaths'],
+					 				self.summary_response['Global']['NewRecovered'] ]
+			}
+			
+			
+			# Creating DataFrame from a Dictionary.
+			self.df = pd.DataFrame(self.d, index= [0,1,2,3,4,5])
+			self.df1 = pd.DataFrame(self.d1, index = [0,1,2])
+			# Menu for Home Section.
+			self.menu2 = ['Summary', 'COVID NEWS']
+			self.option2 = st.selectbox('options', self.menu2)
+		except:
+			st.error('OOPS Something went wrong :( ')
+		
+		
+		if self.option2 == 'Summary':
+			#st.write(self.df.style.background_gradient(cmap = 'Reds'))
+			try:
+				self.pie_fig = px.pie(self.df, values= self.d['Values'] , names= self.d['Labels'], title= 'Summary of Covid - 19 Cases.') 
+				st.write(self.pie_fig)
+				st.write()
+				st.subheader('Histogram:')
+				self.histogram_fig = px.histogram(self.df1, x= self.df1['Labels'], y= self.df1['Values'])
+				st.write(self.histogram_fig)
+			except:
+				st.error('OOPS Something went wrong :( ')
 			
 		elif self.option2 == 'COVID NEWS':
 			# Reading the apiKey from the file.
@@ -202,8 +210,9 @@ class account:
 	
 	def visualize(self):
 		st.title('Visualization of Covid - 19.')
-		st.subheader('Here you can easily view all the current cases, deaths and recoveries in nicely plotted graphs and carry out your analysis.')
-		st.write()
+		st.subheader('Here you can easily view all the current cases, deaths and recoveries in nicely plotted graphs and carry out your    analysis.')
+		st.write(' ')
+		st.write(' ')
 		self.menu1 = ['Scatter Geo Plot', 'Graph', 'Histogram', 'Master Figure']
 		self.option1 = st.selectbox('Options', self.menu1)
 
@@ -239,14 +248,17 @@ class account:
 					except Exception as e:
 						st.error(e)
 						# print(self.by_country_df)
-					self.scatter_geo_fig = px.scatter_geo(self.by_country_df, lat = self.by_country_df['Lat'],
-																lon = self.by_country_df['Lon'],
-																# locations= self.by_country_df['Country'],
-																hover_name= self.by_country_df['Province'],
-																size = self.by_country_df['Active'],
-																# size= self.by_country_df['Confirmed'] - self.by_country_df['Deaths'] - self.by_country_df['Recovered'],
-																color= self.by_country_df['Province'])
-					st.write(self.scatter_geo_fig)
+					try:
+						self.scatter_geo_fig = px.scatter_geo(self.by_country_df, lat = self.by_country_df['Lat'],
+																	lon = self.by_country_df['Lon'],
+																	# locations= self.by_country_df['Country'],
+																	hover_name= self.by_country_df['Province'],
+																	size = self.by_country_df['Active'],
+																	# size= self.by_country_df['Confirmed'] - self.by_country_df['Deaths'] - self.by_country_df['Recovered'],
+																	color= self.by_country_df['Province'])
+						st.write(self.scatter_geo_fig)
+					except:
+						st.error('OOPS Something went wrong :( ')
 
 					
 			elif self.choice == 'World-Wide':
@@ -275,15 +287,17 @@ class account:
 									'Overall_Status' : overall_status,
 									'Active' : active,
 									'Population' : pop})
+				try:
+					self.figure = px.scatter_geo(self.df1,
+											lat = 'Latitude',
+											lon = 'Longitude',
+											size = 'Active',
+											hover_name = self.df1['Country'],
+											color = 'Country' )
 
-				self.figure = px.scatter_geo(self.df1,
-										lat = 'Latitude',
-										lon = 'Longitude',
-										size = 'Active',
-										hover_name = self.df1['Country'],
-										color = 'Country' )
-
-				st.write(self.figure)
+					st.write(self.figure)
+				except:
+					st.error('OOPS Something went wrong :( ')
 
 		# Graph Visualization.
 		elif self.option1 == 'Graph':
@@ -363,9 +377,14 @@ class account:
 			self.selected_country = st.selectbox('Country: ', list(self.countries.keys()))
 			
 			if self.selected_country != 'None':
-				self.url = f"https://api.covid19api.com/live/country/{self.selected_country}"
+				self.url = f"https://api.covid19api.com/live/country/{self.countries[self.selected_country]}"
 				self.response = pd.read_json(self.url)
-				# st.write(self.response.head())
+				self.response['Date'] = pd.to_datetime(self.response['Date']).astype(str)
+				
+				x = str(datetime.datetime.now()).split(' ')[0] + ' ' + '00:00:00+00:00'
+				self.response = self.response[self.response['Date'] == x]
+				#st.write(self.response['Date'])
+				#st.write(self.response.head())
 				self.choice = st.selectbox('Options', ['Full Country', 'States'])
 				if self.choice == 'States':
 					self.figure = px.histogram(self.response,
@@ -379,13 +398,16 @@ class account:
 					'Cases' : [self.response['Confirmed'].sum(), self.response['Deaths'].sum(), self.response['Recovered'].sum() ]
 					}
 					self.df = pd.DataFrame(d, index = [0,1,2])
-
-					self.figure = px.histogram(self.df,
-												x = self.df['Labels'],
-												y = self.df['Cases']
-											)
+					try:
+						self.figure = px.histogram(self.df,
+													x = self.df['Labels'],
+													y = self.df['Cases']
+												)
+							
+						st.write(self.figure)
+					except:
+						st.error('OOPS Something went wrong :( ')
 						
-					st.write(self.figure)
 			else:
 				st.warning('Please select a Country !!')
 
@@ -414,30 +436,40 @@ class account:
 				self.choice = st.selectbox('Menu', ['Master - Scatter', 'Master - Bar', 'Master - Line'])
 
 				if self.choice == 'Master - Scatter':
-					self.figure = make_subplots(rows= 2, cols= 2)
-					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
-					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
-					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Deaths'], name = 'Deaths'),row=2, col = 1)
-					self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Recovered'], name = 'Recovered'),row=2, col = 2)
-					st.write(self.figure)
+					try:
+						self.figure = make_subplots(rows= 2, cols= 2)
+						self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
+						self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
+						self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Deaths'], name = 'Deaths'),row=2, col = 1)
+						self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Recovered'], name = 'Recovered'),row=2, col = 2)
+						st.write(self.figure)
+					except:
+						st.error('OOPS Something went wrong :( ')
 
 				elif self.choice == 'Master - Bar':
-					self.figure = make_subplots(rows= 2, cols= 2)
-					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
-					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
-					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Deaths'], name = 'Deaths'),row=2, col = 1)
-					self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Recovered'], name = 'Recovered'),row=2, col = 2)
-					st.write(self.figure)
+					try:
+						self.figure = make_subplots(rows= 2, cols= 2)
+						self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
+						self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
+						self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Deaths'], name = 'Deaths'),row=2, col = 1)
+						self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Recovered'], name = 'Recovered'),row=2, col = 2)
+						st.write(self.figure)
+					except:
+						st.error('OOPS Something went wrong :( ')
 
 				elif self.choice == 'Master - Line':
-					self.figure = px.line(self.response, x="Date", y="Active", facet_col="Province", facet_col_wrap=2,
-		              facet_row_spacing=0.02, # default is 0.07 when facet_col_wrap is used
-		              facet_col_spacing=0.08, # default is 0.03
-		              height=5000, width= 800,
-		              title= f"Covid Cases in {self.selected_country}")
-					# fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-					self.figure.update_yaxes(showticklabels=True)
-					st.write(self.figure)
+					try:
+						self.figure1 = px.line(self.response, x="Date", y="Active", facet_col="Province", facet_col_wrap=2,
+				          facet_row_spacing=0.02, # default is 0.07 when facet_col_wrap is used
+				          facet_col_spacing=0.08, # default is 0.03
+				          height=5000, width= 800,
+				          title= f"Covid Cases in {self.selected_country}")
+						# fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+						self.figure1.update_yaxes(showticklabels=True)
+						st.write(self.figure1)
+					except:
+						st.error('OOPS Something went wrong :( ')
+						
 			else:
 				st.warning('Please select a Country !!')
 
@@ -456,7 +488,7 @@ class account:
 
 			f_Name, s_Name = st.beta_columns(2)
 			self.name = f_Name.text_input('Please enter Your first name:')
-			self.surname = s_Name.text_input("PLease enter your second name:")
+			self.surname = s_Name.text_input("PLease enter your Last name:")
 
 			e, p = st.beta_columns(2)
 			self.email = e.text_input("Please enter your email:")
