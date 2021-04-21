@@ -19,7 +19,12 @@ from plotly.subplots import make_subplots
 from streamlit.report_thread import add_report_ctx
 import random
 import base64
-
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+import joblib
+import fbprophet
+from fbprophet import Prophet
 
 # Creating a Class for Users.
 class account:
@@ -83,8 +88,8 @@ class account:
 			st.subheader('Histogram:')
 			self.histogram_fig = px.histogram(self.df1, x= self.df1['Labels'], y= self.df1['Values'])
 			st.write(self.histogram_fig)
+			
 		elif self.option2 == 'COVID NEWS':
-
 			# Reading the apiKey from the file.
 			with open('gnews_apiKey', 'r') as self.file:
 				self.apiKey = self.file.read()
@@ -194,7 +199,7 @@ class account:
 				else:
 					st.warning("Please select or enter the values !!")
 
-
+	
 	def visualize(self):
 		st.title('Visualization of Covid - 19.')
 		st.subheader('Here you can easily view all the current cases, deaths and recoveries in nicely plotted graphs and carry out your analysis.')
@@ -436,7 +441,7 @@ class account:
 			else:
 				st.warning('Please select a Country !!')
 
-
+	
 	def vaccination(self):
 		self.client = pymongo.MongoClient('mongodb+srv://admin:admin@password-manager.bl1uj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
 		self.db = self.client['Vaccination']
@@ -550,9 +555,21 @@ class account:
 			st.error(e)
 
 	def analysis(self):
-		st.write()
-		st.write()
-		st.image('./work-in-progress.jpg')
+		st.title('Welcome to the Ananlysis Center.')
+		st.subheader('Here you can view the future number of Estimated cases:')
+		st.write(' ')
+		prop = joblib.load('./model.joblib')
+		self.period = st.number_input('Please enter the time duration(in days) for predicting the number of cases: ')
+		predict = st.button('Predict')
+		if predict:
+			future = prop.make_future_dataframe(periods = int(self.period))
+			future_forecast = prop.predict(future)
+			forecast = future_forecast.tail(int(self.period))
+			
+			st.write(forecast)
+			st.write(fbprophet.plot.plot_plotly(prop, future_forecast, xlabel='Date', ylabel = 'Confirmed'))
+		
+		
 
 	def help_center(self):
 		st.title('Help Centre.')
@@ -772,12 +789,15 @@ def dashboard():
 			'Arjun Agarwal' : '"Now is the time for us to look after the people who work for us. When a company steps up at a time like this, it builds loyalty, commitment, and long-lasting teams."',
 			'Caryn Sullivan' : '“In the face of adversity, we have a choice. We can be bitter, or we can be better. Those words are my North Star.”',
 		}
+		
+		gif_list = ['./attack_covid19.gif', './social_distance.gif', './sanitizer.gif', './wash_hands.gif', './wear_mask.gif']
+		
 		st.sidebar.write('Quotes:')
 		authors = ['Mohamed El-Erian', 'Cali Williams Yost', 'Michael Dell', 'Socrates', 'Kiran Mazumdar-Shaw', 'Steve Maraboli' ]
 		author = random.choice(authors)
 		st.sidebar.write('Author : ', author)
 		st.sidebar.write('Quote : ', Quotes[author])
-		st.sidebar.image('./covid.png')
+		st.sidebar.image(random.choice(gif_list))
 
 		if main_option == 'Home':
 			obj.home()
@@ -938,8 +958,9 @@ def login():
 	pass_ = st.beta_columns(2)
 	password = pass_[0].text_input("Password:",type = 'password')
 
-	submit = st.beta_columns(2)
+	submit = st.beta_columns(4)
 	choice = submit[0].button("Login")
+	guest_login = submit[1].button('Guest Login')
 	
 	if choice:
 		db_user = cursor.find_one({'username': username})
@@ -955,26 +976,33 @@ def login():
 				st.info(f'Your Dashboard is ready {session_state.username},')
 				session_state.dash_button = True
 				session_state.show = False
+	elif guest_login:
+		st.success("Logged in successfully.")
+		obj = account(session_state.username)
+		session_state.username = 'Guest'
+		st.info(f'Your Dashboard is ready {session_state.username},')
+		session_state.dash_button = True
+		session_state.show = False
 
 
 # st.title('Welcome to our Covid-19 Tracker App.')
-PAGE_CONFIG = {'page_title' : 'Covid-19', 'layout' : 'centered'}
+PAGE_CONFIG = {'page_title' : 'Covid-19', 'page_icon': './download.jpeg','layout' : 'centered'}
 st.set_page_config(**PAGE_CONFIG)
 
 st.write()
 menu = ['Login', 'Register']
 
 if session_state.show:
-	# page_bg_img = '''
-	# 	<style>
-	# 	body {
-	# 	background-image: url("https://images.pexels.com/photos/3993212/pexels-photo-3993212.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940");
+	#page_bg_img = '''
+	#	<style>
+	#	body {
+	# 	background-image: url("./covid.png");
 	# 	background-repeat: no-repeat;
 	# 	background-size: cover;
 	# 	}
 	# </style>'''
-	# st.markdown(page_bg_img, unsafe_allow_html=True)
-	set_png_as_page_bg('covid.png')
+	#st.markdown(page_bg_img, unsafe_allow_html=True)
+	#set_png_as_page_bg('./covid.png')
 	st.title('Covid - 19 WebApp.')
 	st.subheader('Welcome to our WebApp, Please login if you are an existing user or register yourself with our services.')
 	choice = st.selectbox('Menu', menu)
