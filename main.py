@@ -437,6 +437,8 @@ class account:
 
 				if self.choice == 'Master - Scatter':
 					try:
+						self.response = self.response.groupby('Date').sum()
+						self.response.reset_index(inplace = True)
 						self.figure = make_subplots(rows= 2, cols= 2)
 						self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
 						self.figure.add_trace(go.Scatter(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
@@ -448,6 +450,8 @@ class account:
 
 				elif self.choice == 'Master - Bar':
 					try:
+						self.response = self.response.groupby('Date').sum()
+						self.response.reset_index(inplace = True)
 						self.figure = make_subplots(rows= 2, cols= 2)
 						self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Active'], name= "Active"),row=1, col = 1)
 						self.figure.add_trace(go.Bar(x= self.response['Date'], y= self.response['Confirmed'], name = 'Confirmed'),row=1, col = 2)
@@ -656,37 +660,47 @@ class account:
 		st.write(' ')
 		self.option = st.selectbox('Menu', ['Statewise History of India', 'Testing Data', 'Compare Data' ])
 		if self.option == 'Statewise History of India':
-			self.url = 'https://api.rootnet.in/covid19-in/unofficial/covid19india.org/statewise/history'
+			self.uri = 'https://api.covid19api.com/live/country/India'
+			self.df = pd.read_json(self.uri)
+			self.df['Date'] = pd.to_datetime(self.df['Date']).astype(str)
+			#st.write(self.df['Date'])
+			#self.url = 'https://api.rootnet.in/covid19-in/unofficial/covid19india.org/statewise/history'
 			self.d = st.date_input('Enter a date:')
 			states = []
+			self.date = str(self.d) + ' 00:00:00+00:00'
+			#st.write(self.date)
+			self.df = self.df[self.df['Date'] == self.date]
+			self.df = self.df.drop(['ID', 'Country', 'CountryCode', 'City', 'CityCode', 'Lat', 'Lon', 'Date'], axis = 1)
+			self.df.reset_index(inplace = True) 
+			#st.write(self.df)
 			
-			self.response = requests.get(self.url).json()
-			for state in self.response['data']['history'][0]['statewise']:
-				states.append(state['state'])
-
+			#self.response = requests.get(self.url).json()
+			#for state in self.response['data']['history'][0]['statewise']:
+			#	states.append(state['state'])
+			
+			st.write(f'Day: {self.d}')
+			st.write(f' ⚫ Confirmed: {self.df.sum()["Confirmed"]}')
+			st.write(f' ⚫ Recovered: {self.df.sum()["Recovered"]}')
+			st.write(f' ⚫ Deaths: {self.df.sum()["Deaths"]}')
+			st.write(f' ⚫ Active Number of cases: {self.df.sum()["Active"]}')
+			
+			states = list(self.df['Province'])
 			self.selected_state = st.selectbox('States:', states)
 
-			details = {}
-			for data in self.response['data']['history']:
-				details[data['day']] = {'states' : data['statewise'],'Total_data': [data['total']['confirmed'], data['total']['recovered'], data['total']['deaths'], data['total']['active']]}
-			# print(d)
+			#details = {}
+			#for data in self.response['data']['history']:
+			#	details[data['day']] = {'states' : data['statewise'],'Total_data': [data['total']['confirmed'], data['total']['recovered'], data['total']['deaths'], data['total']['active']]}
+			#st.write(self.d)
 			self.d = str(self.d)
-			if self.d in details:
-				st.write(f'Day: {self.d}')
-				st.write(f' ⚫ Confirmed: {details[self.d]["Total_data"][0]}')
-				st.write(f' ⚫ Recovered: {details[self.d]["Total_data"][1]}')
-				st.write(f' ⚫ Deaths: {details[self.d]["Total_data"][2]}')
-				st.write(f' ⚫ Active Number of cases: {details[self.d]["Total_data"][3]}')
-				st.write(' ')
+			if self.d:
+				#st.write(' ')
 				st.write(' ') 
+				self.df = self.df[self.df['Province'] == self.selected_state]
 				st.write(f'State: {self.selected_state}')
-				for data in details[self.d]['states']:
-					if data['state'] == self.selected_state:
-						st.write(f" ⚫ Confirmed: {data['confirmed']}")
-						st.write(f" ⚫ Recovered: {data['recovered']}")
-						st.write(f" ⚫ Deaths: {data['deaths']}")
-						st.write(f" ⚫ Active Number of cases: {data['active']}")
-						break				
+				st.write(f" ⚫ Confirmed: {int(self.df['Confirmed'])}")
+				st.write(f" ⚫ Recovered: {int(self.df['Recovered'])}")
+				st.write(f" ⚫ Deaths: {int(self.df['Deaths'])}")
+				st.write(f" ⚫ Active Number of cases: {int(self.df['Active'])}")				
 
 			else:
 				st.info('Sorry, No data found for this day !!')
