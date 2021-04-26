@@ -249,14 +249,19 @@ class account:
 						st.error(e)
 						# print(self.by_country_df)
 					try:
-						self.scatter_geo_fig = px.scatter_geo(self.by_country_df, lat = self.by_country_df['Lat'],
+						'''self.scatter_geo_fig = px.scatter_geo(self.by_country_df, lat = self.by_country_df['Lat'],
 																	lon = self.by_country_df['Lon'],
 																	# locations= self.by_country_df['Country'],
 																	hover_name= self.by_country_df['Province'],
 																	size = self.by_country_df['Active'],
 																	# size= self.by_country_df['Confirmed'] - self.by_country_df['Deaths'] - self.by_country_df['Recovered'],
-																	color= self.by_country_df['Province'])
-						st.write(self.scatter_geo_fig)
+																	color= self.by_country_df['Province'])'''
+																	
+						#st.write(self.scatter_geo_fig)
+						px.set_mapbox_access_token('pk.eyJ1IjoicHJhdGlrMjYwOSIsImEiOiJja255OWlqbzAxZXRyMm5xbjZ6aTZsNzVsIn0.GidtdkmE4nCW_UaCLtnqaw')
+						self.fig = px.scatter_mapbox(self.by_country_df, lat="Lat", lon="Lon",color="Province", size="Active",
+                  color_continuous_scale=px.colors.cyclical.IceFire)
+						st.write(self.fig)
 					except:
 						st.error('OOPS Something went wrong :( ')
 
@@ -288,14 +293,18 @@ class account:
 									'Active' : active,
 									'Population' : pop})
 				try:
-					self.figure = px.scatter_geo(self.df1,
+					'''self.figure = px.scatter_geo(self.df1,
 											lat = 'Latitude',
 											lon = 'Longitude',
 											size = 'Active',
 											hover_name = self.df1['Country'],
 											color = 'Country' )
 
-					st.write(self.figure)
+					st.write(self.figure)'''
+					px.set_mapbox_access_token('pk.eyJ1IjoicHJhdGlrMjYwOSIsImEiOiJja255OWlqbzAxZXRyMm5xbjZ6aTZsNzVsIn0.GidtdkmE4nCW_UaCLtnqaw')
+					self.fig = px.scatter_mapbox(self.df1, lat="Latitude", lon="Longitude",color="Country", hover_name = 'Active',
+                  color_continuous_scale=px.colors.cyclical.IceFire)
+					st.write(self.fig)
 				except:
 					st.error('OOPS Something went wrong :( ')
 
@@ -484,117 +493,173 @@ class account:
 		self.pointer = self.db['registration']
 
 		st.title('Welcome to the Vaccination Center.')
-		st.subheader('Please Fill in this form inorder to register for the vaccination:')
-		st.write()
-		try:
-			# uname = st.beta_columns(2)
-			# self.u_name = uname[0].text_input('Please enter your username')
-
-			f_Name, s_Name = st.beta_columns(2)
-			self.name = f_Name.text_input('Please enter Your first name:')
-			self.surname = s_Name.text_input("PLease enter your Last name:")
-
-			e, p = st.beta_columns(2)
-			self.email = e.text_input("Please enter your email:")
-			self.phone = p.text_input('Please enter your Phone Number:')
-
-			aadhar, age = st.beta_columns(2)
-			self.aadhar_number = aadhar.text_input('Please enter your Aadhar Number:')
-			self.Age = age.text_input('Please enter your age:')
-
+		menu = ['Vaccination Details', 'Register']
+		self.choice = st.selectbox('Menu:', menu)
+		if self.choice == 'Vaccination Details':
+			df = pd.read_csv('http://api.covid19india.org/csv/latest/cowin_vaccine_data_statewise.csv')
+			st.write('India')
+			df2 = df[df['State'] == 'India']
+			
+			self.figure = make_subplots(rows= 3, cols= 2)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Individuals Registered'], name= "Total Individuals Registered"),row=1, col = 1)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Individuals Vaccinated'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Covaxin Administered'], name = 'Total Covaxin Administered'),row=3, col = 1)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total CoviShield Administered'], name = 'Total CoviShield Administered'),row=3, col = 2)
+			st.write(self.figure)
+			
+			self.states = list(df['State'].unique())
+			self.states.remove('India')
+			self.state = st.selectbox('State:', self.states)
+			state_df = df[df['State'] == self.state]
+			
+			self.figure1 = make_subplots(rows= 3, cols= 2)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Individuals Registered'], name= "Total Individuals Registered"),row=1, col = 1)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Individuals Vaccinated'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Covaxin Administered'], name = 'Total Covaxin Administered'),row=3, col = 1)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total CoviShield Administered'], name = 'Total CoviShield Administered'),row=3, col = 2)
+			st.write(self.figure1)
+			
+			
+		elif self.choice == 'Register':
+			st.subheader('Please Fill in this form inorder to register for the vaccination:')
+			st.write()
 			try:
-				self.uploaded_file = st.file_uploader('Please upload an image of your aadhar card ( png, jpg, jpeg with Max Size - 250 Kb):', type = ['png', 'jpg', 'jpeg'])
-				if self.uploaded_file is not None:
-					st.info('Please check your uploaded Image:')
-					st.write()
-					self.uploaded_image = Image.open(self.uploaded_file)
-					st.image(self.uploaded_image)
-				# if self.uploaded_file is not None:
-				# 	self.file_details = {
-				# 					'Name' : self.uploaded_file.name,
-				# 					'type' : self.uploaded_file.type,
-				# 					'size' : self.uploaded_file.size
+				# uname = st.beta_columns(2)
+				# self.u_name = uname[0].text_input('Please enter your username')
 
-				# 	} 
-				# 	st.write(self.file_details)
+				f_Name, s_Name = st.beta_columns(2)
+				self.name = f_Name.text_input('Please enter Your first name:')
+				self.surname = s_Name.text_input("PLease enter your Last name:")
+
+				e, p = st.beta_columns(2)
+				self.email = e.text_input("Please enter your email:")
+				self.phone = p.text_input('Please enter your Phone Number:')
+
+				aadhar, age = st.beta_columns(2)
+				self.aadhar_number = aadhar.text_input('Please enter your Aadhar Number:')
+				self.Age = age.text_input('Please enter your age:')
+
+				try:
+					self.uploaded_file = st.file_uploader('Please upload an image of your aadhar card ( png, jpg, jpeg with Max Size - 250 Kb):', type = ['png', 'jpg', 'jpeg'])
+					if self.uploaded_file is not None:
+						st.info('Please check your uploaded Image:')
+						st.write()
+						self.uploaded_image = Image.open(self.uploaded_file)
+						st.image(self.uploaded_image)
+					# if self.uploaded_file is not None:
+					# 	self.file_details = {
+					# 					'Name' : self.uploaded_file.name,
+					# 					'type' : self.uploaded_file.type,
+					# 					'size' : self.uploaded_file.size
+
+					# 	} 
+					# 	st.write(self.file_details)
+				except Exception as e:
+					st.error(e)
+
+
+				add = st.beta_columns(1)
+				self.address = add[0].text_area("Please enter your Address:")
+
+				dis = st.beta_columns(1)
+				self.diseases = dis[0].text_area('Please enter all the diseases or allergies you have (Please type NA if None):')
+
+
+				submit = st.button('submit')
+				if submit:
+					# if self.u_name == '':
+					# 	st.error('Username cannot be blank !!')
+					if self.name == '':
+						st.error('Name cannot be blank !!')
+					elif self.email == '':
+						st.error('Email field cannot be blank !!')
+					elif self.Age == '':
+						st.error('Age cannot be blank !!')
+					elif self.aadhar_number == '':
+						st.error('Aadhar Number cannot be blank !!')
+					elif self.phone == '' or len(self.phone) < 10 or len(self.phone) > 10:
+						st.error('Enter a valid Phone Number !!')
+					elif self.address == '':
+						st.error('Address cannot be blank !!')
+					elif self.diseases == '':
+						st.error("Please enter NA if you don't have any disease !!")
+					else:
+						records = self.pointer.find_one({
+							'Email' : self.email
+							})
+						if self.uploaded_file.size > 256000:
+							st.error('Please upload the image of size < 250 Kb !!')
+						elif records:
+							st.error('You have already registered you cannot register again !!')
+						else:
+							if 'png' in str(self.uploaded_file.type):
+								self.img_format = 'png'
+							elif 'jpg' in str(self.uploaded_file.type):
+								self.img_format = 'jpg'
+							elif 'jpeg' in str(self.uploaded_file.type):
+								self.img_format = 'jpeg'
+
+							self.img_in_bytes = BytesIO()
+							self.uploaded_image.save(self.img_in_bytes, format= self.img_format)
+
+							data = {
+								'Name' : self.name + ' ' + self.surname,
+								'Email' : self.email,
+								'Phone' : self.phone,
+								'Age' : self.Age,
+								'Aadhar Number' : self.aadhar_number,
+								'Image' : self.img_in_bytes.getvalue(),
+								'Address' : self.address,
+								'Diseases' : self.diseases
+							}
+
+							try:
+								self.inserted = self.pointer.insert_one(data)
+								st.success('You have successfully registered for the vaccination.')
+							except Exception as e:
+								st.error(e)
+
+							
+							# st.write(self.img_in_bytes.getvalue())
+							# self.retrieved_img = Image.open(BytesIO(self.img_in_bytes.getvalue()))
+							# st.image(self.retrieved_img)
+
 			except Exception as e:
 				st.error(e)
-
-
-			add = st.beta_columns(1)
-			self.address = add[0].text_area("Please enter your Address:")
-
-			dis = st.beta_columns(1)
-			self.diseases = dis[0].text_area('Please enter all the diseases or allergies you have (Please type NA if None):')
-
-
-			submit = st.button('submit')
-			if submit:
-				# if self.u_name == '':
-				# 	st.error('Username cannot be blank !!')
-				if self.name == '':
-					st.error('Name cannot be blank !!')
-				elif self.email == '':
-					st.error('Email field cannot be blank !!')
-				elif self.Age == '':
-					st.error('Age cannot be blank !!')
-				elif self.aadhar_number == '':
-					st.error('Aadhar Number cannot be blank !!')
-				elif self.phone == '' or len(self.phone) < 10 or len(self.phone) > 10:
-					st.error('Enter a valid Phone Number !!')
-				elif self.address == '':
-					st.error('Address cannot be blank !!')
-				elif self.diseases == '':
-					st.error("Please enter NA if you don't have any disease !!")
-				else:
-					records = self.pointer.find_one({
-						'Email' : self.email
-						})
-					if self.uploaded_file.size > 256000:
-						st.error('Please upload the image of size < 250 Kb !!')
-					elif records:
-						st.error('You have already registered you cannot register again !!')
-					else:
-						if 'png' in str(self.uploaded_file.type):
-							self.img_format = 'png'
-						elif 'jpg' in str(self.uploaded_file.type):
-							self.img_format = 'jpg'
-						elif 'jpeg' in str(self.uploaded_file.type):
-							self.img_format = 'jpeg'
-
-						self.img_in_bytes = BytesIO()
-						self.uploaded_image.save(self.img_in_bytes, format= self.img_format)
-
-						data = {
-						    'Name' : self.name + ' ' + self.surname,
-						    'Email' : self.email,
-						    'Phone' : self.phone,
-						    'Age' : self.Age,
-						    'Aadhar Number' : self.aadhar_number,
-						    'Image' : self.img_in_bytes.getvalue(),
-						    'Address' : self.address,
-						    'Diseases' : self.diseases
-						}
-
-						try:
-							self.inserted = self.pointer.insert_one(data)
-							st.success('You have successfully registered for the vaccination.')
-						except Exception as e:
-							st.error(e)
-
-						
-						# st.write(self.img_in_bytes.getvalue())
-						# self.retrieved_img = Image.open(BytesIO(self.img_in_bytes.getvalue()))
-						# st.image(self.retrieved_img)
-
-		except Exception as e:
-			st.error(e)
 
 	def analysis(self):
 		st.title('Welcome to the Ananlysis Center.')
 		st.subheader('Here you can view the future number of Estimated cases:')
 		st.write(' ')
-		prop = joblib.load('./model.joblib')
+		menu = ['Confirmed', 'Recovered', 'Deaths']
+		self.choice = st.selectbox('Menu:', menu)
+		df = pd.read_csv('https://api.covid19india.org/csv/latest/case_time_series.csv')
+		data = df
+		if self.choice == 'Confirmed':
+			data['ds'] = df['Date_YMD']
+			data['y'] = df['Total Confirmed']
+			data = data.drop(['Date', 'Date_YMD', 'Daily Confirmed', 'Total Confirmed', 'Daily Recovered', 'Total Recovered', 'Daily Deceased', 'Total Deceased'], axis = 1)
+			data['ds'] = pd.to_datetime(data['ds'])
+			prop = Prophet()
+			prop.fit(data)
+			#prop = joblib.load('./model.joblib')
+		
+		elif self.choice == 'Recovered':
+			data['ds'] = df['Date_YMD']
+			data['y'] = df['Total Recovered']
+			data = data.drop(['Date', 'Date_YMD', 'Daily Confirmed', 'Total Confirmed', 'Daily Recovered', 'Total Recovered', 'Daily Deceased', 'Total Deceased'], axis = 1)
+			data['ds'] = pd.to_datetime(data['ds'])
+			prop = Prophet()
+			prop.fit(data)
+		
+		elif self.choice == 'Deaths':
+			data['ds'] = df['Date_YMD']
+			data['y'] = df['Total Deceased']
+			data = data.drop(['Date', 'Date_YMD', 'Daily Confirmed', 'Total Confirmed', 'Daily Recovered', 'Total Recovered', 'Daily Deceased', 'Total Deceased'], axis = 1)
+			data['ds'] = pd.to_datetime(data['ds'])
+			prop = Prophet()
+			prop.fit(data)
+			
 		self.period = st.number_input('Please enter the time duration(in days) for predicting the number of cases: ')
 		predict = st.button('Predict')
 		if predict:
@@ -706,29 +771,48 @@ class account:
 				st.info('Sorry, No data found for this day !!')
 
 		elif self.option == 'Testing Data':
-			self.url = 'https://api.rootnet.in/covid19-in/stats/testing/raw'
-			self.response = requests.get(self.url).json()
-
-			self.tests = {}
-
-			for data in self.response['data']:
-				self.date = data['timestamp'].split('T')[0]
-				self.tests[self.date] = {"totalSamplesTested": data['totalSamplesTested'],
-		      					"totalIndividualsTested": data['totalIndividualsTested'],
-		      					"totalPositiveCases": data["totalPositiveCases"],
-		      					"source": data['source']
-		      					}
-
-			self.d = st.date_input('Date:')
-			self.d = str(self.d)
+			df = pd.read_csv('http://api.covid19india.org/csv/latest/cowin_vaccine_data_statewise.csv')
+			
+			self.date = st.date_input('Please select a date:')
+			#st.write(self.date.day)
+			
+			self.date = self.date.strftime('%d/%m/%Y')  
+			df1 = df[df['Updated On'] == str(self.date)]
+			#st.write(str(self.date))
+			#st.write(type(self.date))
+			st.write('India')
+			
+			#st.write(df1)
+			df2 = df1[df1['State'] == 'India']
+			#st.write(df2.columns)
+			#st.write(px.scatter(df2, x ='Updated On', y = 'Total Individuals Vaccinated')) 
 			try:
-				st.write(f"Date: {self.d}")
-				st.write(f"Total Samples Tested: {self.tests[self.d]['totalSamplesTested']}")
-				st.write(f"Total Individuals Tested: {self.tests[self.d]['totalIndividualsTested']}")
-				st.write(f"Total Positive Cases: {self.tests[self.d]['totalPositiveCases']}")
-				st.write(f"Source: {self.tests[self.d]['source']}")
-			except Exception as e:
-				st.info('No Data Found For this Day !!')
+				st.write(f'Total Registrations: {int(df2["Total Individuals Registered"])}')
+				st.write(f'Total Sessions Conducted: {int(df2["Total Sessions Conducted"])}')
+				#st.write(f'Total Sites: {int(df2["Total Sites"])}')
+				st.write(f'Total Covaxin Registered: {int(df2["Total Covaxin Administered"])}')
+				st.write(f'Total Covishield Registered: {int(df2["Total CoviShield Administered"])}')
+				st.write(f'Total Individuals Vaccinated: {int(df2["Total Individuals Vaccinated"])}')
+				st.write(f'Total Doses Administered: {int(df2["Total Doses Administered"])}')
+			except:
+				st.info('Please select a proper date !!')
+				
+			self.states = list(df['State'].unique())
+			self.states.remove('India')
+			self.state = st.selectbox('State:', self.states)
+			state_df = df[df['State'] == self.state]
+			date_df = state_df[state_df['Updated On'] == self.date]
+			try:
+				st.write(f'Total Registrations: {int(date_df["Total Individuals Registered"])}')
+				st.write(f'Total Sessions Conducted: {int(date_df["Total Sessions Conducted"])}')
+				#st.write(f'Total Sites: {int(df2["Total Sites"])}')
+				st.write(f'Total Covaxin Registered: {int(date_df["Total Covaxin Administered"])}')
+				st.write(f'Total Covishield Registered: {int(date_df["Total CoviShield Administered"])}')
+				st.write(f'Total Individuals Vaccinated: {int(date_df["Total Individuals Vaccinated"])}')
+				st.write(f'Total Doses Administered: {int(date_df["Total Doses Administered"])}')
+			except:
+				st.info('Please select a proper date !!')
+			
 
 		elif self.option == 'Compare Data':
 			self.country_url = 'https://corona.lmao.ninja/v2/countries'
