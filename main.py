@@ -236,7 +236,7 @@ class account:
 			if self.choice == 'Countries':
 				self.selected_country = st.selectbox('Countries: ', list(self.countries.keys()))
 				
-				self.submit = st.button('submit')
+				self.submit = True
 
 				if self.submit:
 					# self.df = pd.DataFrame({})
@@ -258,9 +258,20 @@ class account:
 																	color= self.by_country_df['Province'])'''
 																	
 						#st.write(self.scatter_geo_fig)
+						self.map_styles_list = ['carto-positron', 'open-street-map', 'satellite-streets', 'carto-darkmatter', 'stamen-terrain', 'stamen-toner', 'stamen-watercolor']
+						self.style = st.selectbox('Map Styles', self.map_styles_list)
+						if self.style == 'carto-positron':
+							self.mode = st.radio("Select Mode:",
+							['Light', 'Dark'])
+							if self.mode == 'Dark':
+								self.style  = 'dark'
+							else:
+								self.style = 'carto-positron'
 						px.set_mapbox_access_token('pk.eyJ1IjoicHJhdGlrMjYwOSIsImEiOiJja255OWlqbzAxZXRyMm5xbjZ6aTZsNzVsIn0.GidtdkmE4nCW_UaCLtnqaw')
-						self.fig = px.scatter_mapbox(self.by_country_df, lat="Lat", lon="Lon",color="Province", size="Active",
-                  color_continuous_scale=px.colors.cyclical.IceFire)
+						self.fig = px.scatter_mapbox(self.by_country_df, lat="Lat", lon="Lon",color_discrete_sequence=["Red"], size="Active",
+							hover_name = 'Province', hover_data = ['Active'], zoom = 3, height = 300)
+						self.fig.update_layout(margin= {"r": 0, "t": 0, "l": 0, "b": 0})
+						self.fig.update_layout(mapbox_style = self.style)
 						st.write(self.fig)
 					except:
 						st.error('OOPS Something went wrong :( ')
@@ -301,9 +312,20 @@ class account:
 											color = 'Country' )
 
 					st.write(self.figure)'''
+					self.map_styles_list = ['carto-positron', 'open-street-map', 'satellite-streets', 'carto-darkmatter', 'stamen-terrain', 'stamen-toner', 'stamen-watercolor']
+					self.style = st.selectbox('Map Styles', self.map_styles_list)
+					if self.style == 'carto-positron':
+						self.mode = st.radio("Select Mode:",
+							['Light', 'Dark'])
+						if self.mode == 'Dark':
+							self.style  = 'dark'
+						else:
+							self.style = 'carto-positron'
 					px.set_mapbox_access_token('pk.eyJ1IjoicHJhdGlrMjYwOSIsImEiOiJja255OWlqbzAxZXRyMm5xbjZ6aTZsNzVsIn0.GidtdkmE4nCW_UaCLtnqaw')
-					self.fig = px.scatter_mapbox(self.df1, lat="Latitude", lon="Longitude",color="Country", hover_name = 'Active',
-                  color_continuous_scale=px.colors.cyclical.IceFire)
+					self.fig = px.scatter_mapbox(self.df1, lat="Latitude", lon="Longitude",color_discrete_sequence=["Red"], hover_name = 'Country',
+                  hover_data = ['Active'], zoom = 1, height = 300)
+					self.fig.update_layout(mapbox_style = self.style)
+					self.fig.update_layout(margin= {"r": 0, "t": 0, "l": 0, "b": 0})
 					st.write(self.fig)
 				except:
 					st.error('OOPS Something went wrong :( ')
@@ -314,69 +336,101 @@ class account:
 			st.subheader('Here you can see the number of cases in each country marked on the Graph.')
 			st.write()
 			# Countries Selection i.e Single or Compare.
-			self.selected_country = st.selectbox('Country1: ', list(self.countries.keys()))
-			self.compare_country = st.selectbox('Country2:', list(self.countries.keys()))
-			self.selected_status = st.selectbox('Options', ['confirmed', 'deaths', 'recovered'])
-			
-			x = datetime.datetime.now()
-			self.date = ''
-			for i in str(x):
-				if i == ' ':
-					self.date += 'T'
-				elif i == '.':
-					break
-				else:
-					self.date += i
-			self.date += 'Z'
-			print(self.date)
-			self.submit = st.button('submit')
-			self.graph_figure = go.Figure()
-			# If country1:
-			if self.submit and self.selected_country != 'None':
+			menu = ['Scatter Plots', 'Compare Countries']
+			self.choice = st.selectbox('Menu:', menu)
+			if self.choice == 'Scatter Plots':
 				try:
-					# Url of the Api
-					self.graph_url1 = f"https://api.covid19api.com/country/{self.selected_country}/status/{self.selected_status}?from=2020-03-01T00:00:00Z&to{self.date}"
-					self.graph_response1 = requests.get(self.graph_url1).json()
-					print(self.graph_response1)
-					# Initializing empty lists for the x and y values of the Graphs for Country1.
-					self.x1 = []
-					self.y1 = []
-					# Iterating on the response to get the date and nimber of cases.
-					for data1 in self.graph_response1:
-						self.x1.append(data1['Date'])
-						self.y1.append(data1['Cases'])
-					self.y1 = list(map(int, self.y1))
-					print(self.y1)
-					self.graph_figure.add_trace(go.Scatter(x= self.x1,
-																y= self.y1, name= self.selected_country))
-				except Exception as e:
-					st.error(e)
+					self.selected_country = st.selectbox('Country: ', list(self.countries.keys()))
+						
+					if self.selected_country != 'None':
+						self.url = f"https://api.covid19api.com/live/country/{self.countries[self.selected_country]}"
+						self.df = pd.read_json(self.url)
+						self.df = self.df.groupby('Date').sum()
+						self.df = self.df.reset_index()
 
-			#If Country2:
-			if self.submit and self.compare_country != 'None':
-				try:
-					# Url of the Api.
-					self.graph_url2 = f"https://api.covid19api.com/country/{self.countries[self.compare_country]}/status/{self.selected_status}"
-					self.graph_response2 = requests.get(self.graph_url2).json()
-					# Initializing empty lists for the x and y values of the Graphs for Country 2.
-					self.x2 = []
-					self.y2 = []
-					# Iterating on the response to get the date and nimber of cases.
-					for data2 in self.graph_response2:
-						self.x2.append(data2['Date'])
-						self.y2.append(data2['Cases'])
-					self.graph_figure.add_trace(go.Scatter(x= self.x2,
-																y= self.y2, name= self.compare_country))
-				except Exception as e:
-					st.error(e)
+						s = st.beta_columns(4)
+						self.c = s[0].checkbox('Confirmed')
+						self.d = s[1].checkbox('Deaths')
+						self.r = s[2].checkbox('Recovered')
+						#self.c = s[0].checkbox('Confirmed')
 
-			if self.submit:
-				self.graph_figure.update_layout(
-					legend_title = 'Countries',
-		    		title = 'Covid 19 Cases',
-		    		xaxis_tickformat = '%d %B (%a)<br>%Y'
-				)
-				st.write(self.graph_figure)
+						figure = go.Figure()
+						#figure.add_trace(go.Scatter(x = self.df['Date'], y = self.df['Active']))
+						if self.c:
+							figure.add_trace(go.Scatter(x = self.df['Date'], y = self.df['Confirmed'], name = 'Confirmed'))
+						if self.d:
+							figure.add_trace(go.Scatter(x = self.df['Date'], y = self.df['Deaths'], name ='Deaths'))
+						if self.r:
+							figure.add_trace(go.Scatter(x = self.df['Date'], y = self.df['Recovered'], name = 'Recovered'))
+						st.write(figure)
+				except:
+					st.warning('Please select a Country !!')
+
+
+			elif self.choice == 'Compare Countries':
+				self.selected_country = st.selectbox('Country1: ', list(self.countries.keys()))
+				self.compare_country = st.selectbox('Country2:', list(self.countries.keys()))
+				self.selected_status = st.selectbox('Options', ['confirmed', 'deaths', 'recovered'])
+				
+				x = datetime.datetime.now()
+				self.date = ''
+				for i in str(x):
+					if i == ' ':
+						self.date += 'T'
+					elif i == '.':
+						break
+					else:
+						self.date += i
+				self.date += 'Z'
+				print(self.date)
+				self.submit = st.button('submit')
+				self.graph_figure = go.Figure()
+				# If country1:
+				if self.submit and self.selected_country != 'None':
+					try:
+						# Url of the Api
+						self.graph_url1 = f"https://api.covid19api.com/country/{self.selected_country}/status/{self.selected_status}?from=2020-03-01T00:00:00Z&to{self.date}"
+						self.graph_response1 = requests.get(self.graph_url1).json()
+						print(self.graph_response1)
+						# Initializing empty lists for the x and y values of the Graphs for Country1.
+						self.x1 = []
+						self.y1 = []
+						# Iterating on the response to get the date and nimber of cases.
+						for data1 in self.graph_response1:
+							self.x1.append(data1['Date'])
+							self.y1.append(data1['Cases'])
+						self.y1 = list(map(int, self.y1))
+						print(self.y1)
+						self.graph_figure.add_trace(go.Scatter(x= self.x1,
+																	y= self.y1, name= self.selected_country))
+					except Exception as e:
+						st.error(e)
+
+				#If Country2:
+				if self.submit and self.compare_country != 'None':
+					try:
+						# Url of the Api.
+						self.graph_url2 = f"https://api.covid19api.com/country/{self.countries[self.compare_country]}/status/{self.selected_status}"
+						self.graph_response2 = requests.get(self.graph_url2).json()
+						# Initializing empty lists for the x and y values of the Graphs for Country 2.
+						self.x2 = []
+						self.y2 = []
+						# Iterating on the response to get the date and nimber of cases.
+						for data2 in self.graph_response2:
+							self.x2.append(data2['Date'])
+							self.y2.append(data2['Cases'])
+						self.graph_figure.add_trace(go.Scatter(x= self.x2,
+																	y= self.y2, name= self.compare_country))
+					except Exception as e:
+						st.error(e)
+
+				if self.submit:
+					self.graph_figure.update_layout(
+						legend_title = 'Countries',
+			    		title = 'Covid 19 Cases',
+			    		xaxis_tickformat = '%d %B (%a)<br>%Y'
+					)
+					st.write(self.graph_figure)
 
 		elif self.option1 == 'Histogram':
 			st.title("Histogram")
@@ -667,7 +721,7 @@ class account:
 			future_forecast = prop.predict(future)
 			forecast = future_forecast.tail(int(self.period))
 			
-			st.write(forecast)
+			#st.write(forecast)
 			st.write(fbprophet.plot.plot_plotly(prop, future_forecast, xlabel='Date', ylabel = 'Confirmed'))
 		
 		
