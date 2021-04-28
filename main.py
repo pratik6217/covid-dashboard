@@ -910,7 +910,7 @@ class account:
 					self.response = requests.get(self.url).json()
 					self.name[0].write(f'Country : {self.response["country"]}')
 					self.img[0].image(self.response['countryInfo']['flag'])
-					#st.write(self.response['countryInfo']['flag'])
+					st.write(self.response['countryInfo']['flag'])
 					#st.image(self.response['countryInfo']['flag'])
 					self.c[0].write(f'Cases Today : {self.response["todayCases"]}')
 					self.d[0].write(f'Deaths Today: {self.response["todayDeaths"]}')
