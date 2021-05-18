@@ -555,7 +555,7 @@ class account:
 			df2 = df[df['State'] == 'India']
 			
 			self.figure = make_subplots(rows= 3, cols= 2)
-			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Individuals Registered'], name= "Total Individuals Registered"),row=1, col = 1)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Doses Administered'], name= "Total Doses Administered"),row=1, col = 1)
 			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Individuals Vaccinated'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
 			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Covaxin Administered'], name = 'Total Covaxin Administered'),row=3, col = 1)
 			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total CoviShield Administered'], name = 'Total CoviShield Administered'),row=3, col = 2)
@@ -567,7 +567,7 @@ class account:
 			state_df = df[df['State'] == self.state]
 			
 			self.figure1 = make_subplots(rows= 3, cols= 2)
-			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Individuals Registered'], name= "Total Individuals Registered"),row=1, col = 1)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Doses Administered'], name= "Total Doses Administered"),row=1, col = 1)
 			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Individuals Vaccinated'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
 			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Covaxin Administered'], name = 'Total Covaxin Administered'),row=3, col = 1)
 			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total CoviShield Administered'], name = 'Total CoviShield Administered'),row=3, col = 2)
@@ -838,17 +838,19 @@ class account:
 			
 			#st.write(df1)
 			df2 = df1[df1['State'] == 'India']
+			# st.write(df2)
 			#st.write(df2.columns)
 			#st.write(px.scatter(df2, x ='Updated On', y = 'Total Individuals Vaccinated')) 
 			try:
-				st.write(f'Total Registrations: {int(df2["Total Individuals Registered"])}')
+				# st.write(f'Total Registrations: {int(df2["Total Individuals Registered"])}')
 				st.write(f'Total Sessions Conducted: {int(df2["Total Sessions Conducted"])}')
 				#st.write(f'Total Sites: {int(df2["Total Sites"])}')
 				st.write(f'Total Covaxin Registered: {int(df2["Total Covaxin Administered"])}')
 				st.write(f'Total Covishield Registered: {int(df2["Total CoviShield Administered"])}')
 				st.write(f'Total Individuals Vaccinated: {int(df2["Total Individuals Vaccinated"])}')
 				st.write(f'Total Doses Administered: {int(df2["Total Doses Administered"])}')
-			except:
+			except Exception as e:
+				# st.info(e)
 				st.info('Please select a proper date !!')
 				
 			self.states = list(df['State'].unique())
@@ -857,7 +859,7 @@ class account:
 			state_df = df[df['State'] == self.state]
 			date_df = state_df[state_df['Updated On'] == self.date]
 			try:
-				st.write(f'Total Registrations: {int(date_df["Total Individuals Registered"])}')
+				# st.write(f'Total Registrations: {int(date_df["Total Individuals Registered"])}')
 				st.write(f'Total Sessions Conducted: {int(date_df["Total Sessions Conducted"])}')
 				#st.write(f'Total Sites: {int(df2["Total Sites"])}')
 				st.write(f'Total Covaxin Registered: {int(date_df["Total Covaxin Administered"])}')
