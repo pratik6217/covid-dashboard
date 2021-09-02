@@ -1084,7 +1084,7 @@ def register():
 	st.subheader("Please enter your details:")
 
 #Creating Containers for First and last names.
-	first_name, last_name = st.beta_columns(2)
+	first_name, last_name = st.columns(2)
 	name = first_name.text_input("First Name:")
 	surname = last_name.text_input("Last Name:")
 
