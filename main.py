@@ -23,8 +23,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 import joblib
-import fbprophet
-from fbprophet import Prophet
+# import fbprophet
+# from fbprophet import Prophet
 
 # Creating a Class for Users.
 class account:
@@ -556,9 +556,9 @@ class account:
 			
 			self.figure = make_subplots(rows= 3, cols= 2)
 			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Doses Administered'], name= "Total Doses Administered"),row=1, col = 1)
-			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Individuals Vaccinated'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
-			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total Covaxin Administered'], name = 'Total Covaxin Administered'),row=3, col = 1)
-			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Total CoviShield Administered'], name = 'Total CoviShield Administered'),row=3, col = 2)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Male (Individuals Vaccinated)'] + df2['Female (Individuals Vaccinated)'] + df2['Transgender (Individuals Vaccinated)'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['Covaxin (Doses Administered)'], name = 'Total Covaxin Administered'),row=3, col = 1)
+			self.figure.add_trace(go.Scatter(x= df2['Updated On'], y= df2['CoviShield (Doses Administered)'], name = 'Total CoviShield Administered'),row=3, col = 2)
 			st.write(self.figure)
 			
 			self.states = list(df['State'].unique())
@@ -568,9 +568,9 @@ class account:
 			
 			self.figure1 = make_subplots(rows= 3, cols= 2)
 			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Doses Administered'], name= "Total Doses Administered"),row=1, col = 1)
-			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Individuals Vaccinated'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
-			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total Covaxin Administered'], name = 'Total Covaxin Administered'),row=3, col = 1)
-			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Total CoviShield Administered'], name = 'Total CoviShield Administered'),row=3, col = 2)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Male (Individuals Vaccinated)'] + state_df['Female (Individuals Vaccinated)'] + state_df['Transgender (Individuals Vaccinated)'], name = 'Total Individuals Vaccinated'),row=1, col = 2)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['Covaxin (Doses Administered)'], name = 'Total Covaxin Administered'),row=3, col = 1)
+			self.figure1.add_trace(go.Scatter(x= state_df['Updated On'], y= state_df['CoviShield (Doses Administered)'], name = 'Total CoviShield Administered'),row=3, col = 2)
 			st.write(self.figure1)
 			
 			
@@ -578,18 +578,16 @@ class account:
 			st.subheader('Please Fill in this form inorder to register for the vaccination:')
 			st.write()
 			try:
-				# uname = st.beta_columns(2)
-				# self.u_name = uname[0].text_input('Please enter your username')
 
-				f_Name, s_Name = st.beta_columns(2)
+				f_Name, s_Name = st.columns(2)
 				self.name = f_Name.text_input('Please enter Your first name:')
 				self.surname = s_Name.text_input("PLease enter your Last name:")
 
-				e, p = st.beta_columns(2)
+				e, p = st.columns(2)
 				self.email = e.text_input("Please enter your email:")
 				self.phone = p.text_input('Please enter your Phone Number:')
 
-				aadhar, age = st.beta_columns(2)
+				aadhar, age = st.columns(2)
 				self.aadhar_number = aadhar.text_input('Please enter your Aadhar Number:')
 				self.Age = age.text_input('Please enter your age:')
 
@@ -612,10 +610,10 @@ class account:
 					st.error(e)
 
 
-				add = st.beta_columns(1)
+				add = st.columns(1)
 				self.address = add[0].text_area("Please enter your Address:")
 
-				dis = st.beta_columns(1)
+				dis = st.columns(1)
 				self.diseases = dis[0].text_area('Please enter all the diseases or allergies you have (Please type NA if None):')
 
 
@@ -892,21 +890,21 @@ class account:
 				if self.selected_country1:
 					self.flag2 = True
 
-				self.name = st.beta_columns(2)
-				self.img = st.beta_columns(2)
+				self.name = st.columns(2)
+				self.img = st.columns(2)
 				# img[0].image(Image.open(BytesIO(requests.get(response['countryInfo']['flag']).content)))
 				# img[1].image(Image.open(BytesIO(requests.get(response1['countryInfo']['flag']).content)))
-				self.c = st.beta_columns(2)
-				self.d = st.beta_columns(2)
-				self.r = st.beta_columns(2)
-				self.c1 = st.beta_columns(2)
-				self.d1 = st.beta_columns(2)
-				self.r1 = st.beta_columns(2)
-				self.act = st.beta_columns(2)
-				self.cs = st.beta_columns(2)
-				self.test = st.beta_columns(2)
-				self.pop = st.beta_columns(2)
-				self.cont = st.beta_columns(2)
+				self.c = st.columns(2)
+				self.d = st.columns(2)
+				self.r = st.columns(2)
+				self.c1 = st.columns(2)
+				self.d1 = st.columns(2)
+				self.r1 = st.columns(2)
+				self.act = st.columns(2)
+				self.cs = st.columns(2)
+				self.test = st.columns(2)
+				self.pop = st.columns(2)
+				self.cont = st.columns(2)
 
 				if self.flag1:
 					self.response = requests.get(self.url).json()
@@ -1090,19 +1088,19 @@ def register():
 	name = first_name.text_input("First Name:")
 	surname = last_name.text_input("Last Name:")
 
-	e = st.beta_columns(1)
+	e = st.columns(1)
 	email = e[0].text_input("Email:")
 
-	u, ph = st.beta_columns(2)
+	u, ph = st.columns(2)
 	username = u.text_input("Username:")
 	phone = ph.text_input("Phone:")
   
 
-	p1, p2 = st.beta_columns(2)
+	p1, p2 = st.columns(2)
 	password1 = p1.text_input("Password:", type = 'password')
 	password2 = p2.text_input("Re-enter Password:", type = 'password')
 
-	space = st.beta_columns(3)
+	space = st.columns(3)
 	agree = space[0].checkbox("I agree")
 	submit = space[2].button("submit")
 
@@ -1140,13 +1138,13 @@ def login():
 	st.title("Login")
 	st.subheader("Please enter your details:")
 
-	u_name = st.beta_columns(2)
+	u_name = st.columns(2)
 	username = u_name[0].text_input("Username:")
 
-	pass_ = st.beta_columns(2)
+	pass_ = st.columns(2)
 	password = pass_[0].text_input("Password:",type = 'password')
 
-	submit = st.beta_columns(4)
+	submit = st.columns(4)
 	choice = submit[0].button("Login")
 	guest_login = submit[1].button('Guest Login')
 	
