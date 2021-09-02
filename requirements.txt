@@ -5,6 +5,7 @@ cryptography
 pymongo
 dnspython
 pymongo[srv]
+pystan=='3.2.0'
 fbprophet
 joblib
 sklearn
