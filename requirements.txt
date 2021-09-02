@@ -8,6 +8,5 @@ pymongo[srv]
 joblib
 sklearn
 numpy
-cython
-pystan==2.19.1.1
-fbprophet
+
+
