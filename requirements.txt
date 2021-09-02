@@ -5,8 +5,9 @@ cryptography
 pymongo
 dnspython
 pymongo[srv]
-pystan==2.19.1.1
-fbprophet
 joblib
 sklearn
 numpy
+cython
+pystan==3.2.0
+fbprophet
