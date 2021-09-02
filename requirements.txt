@@ -9,5 +9,5 @@ joblib
 sklearn
 numpy
 cython
-pystan==3.2.0
+pystan==2.19.1.1
 fbprophet
