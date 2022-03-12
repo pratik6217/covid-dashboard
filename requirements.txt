@@ -1,0 +1,13 @@
+plotly
+streamlit
+pandas
+cryptography
+pymongo
+dnspython
+pymongo[srv]
+joblib
+sklearn
+numpy
+
+
+
